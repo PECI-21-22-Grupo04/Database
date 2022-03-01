@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Users (
 		u_height		INT,	
 		u_weight		INT,		
 		u_fitness		NVARCHAR(255),
-		pathologies		NVARCHAR(512), 
+		pathologies		NVARCHAR(1024)  DEFAULT "", 
 		PRIMARY KEY (userID),
 		CHECK (u_age > 0 AND u_age < 120),			-- age in year
 		CHECK (u_height > 0 AND u_height < 250),	-- height in cm

@@ -15,7 +15,17 @@ BEGIN
 END $$
 DELIMITER ;
 
+DELIMITER $$
+CREATE PROCEDURE spDeleteUser (IN email NVARCHAR(255), IN userKey NVARCHAR(255))
+BEGIN
+	SELECT userID INTO @uID FROM (SELECT userID, CONVERT(AES_DECRYPT(mail, userKey) USING utf8) AS mail FROM PECI_PROJ.Users) AS t1 WHERE t1.mail = email;
+    DELETE FROM PECI_PROJ.Users WHERE userID = @uID;
+END $$
+DELIMITER ;
+
 -- Testes --
 CALL spCreateUser('teste@mail.com','teste','1234','chave');
 
 CALL spSelectUser('teste@mail.com','chave');
+
+CALL spDeleteUser('teste@mail.com','chave');
