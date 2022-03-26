@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysUser(
     firstName		VARBINARY(255) 	NOT NULL,
 	lastName		VARBINARY(255) 	NOT NULL,
     birthdate		DATE			NOT NULL,
-    sex				CHAR(1)			DEFAULT	"-",
+    sex				NVARCHAR(32)	NOT NULL,
     street			VARBINARY(255) 	NOT NULL,
     postCode		VARBINARY(255) 	NOT NULL,
     city			VARBINARY(255) 	NOT NULL,

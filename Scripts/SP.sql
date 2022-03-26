@@ -3,7 +3,7 @@ USE PECI_PROJ;
 -- SPs FOR MOBILE COMPONENT -
 -- -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
-CREATE PROCEDURE spCreateClient (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex CHAR(1), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spCreateClient (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN userKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
 		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country) VALUES (AES_ENCRYPT(INemail, userKey), AES_ENCRYPT(INfirstName, userKey), AES_ENCRYPT(INlastName, userKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, userKey), AES_ENCRYPT(INpostCode, userKey), AES_ENCRYPT(INcity, userKey), AES_ENCRYPT(INcountry, userKey));
@@ -36,8 +36,8 @@ BEGIN
 	START TRANSACTION;
 		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = INemail;
 		DELETE FROM PECI_PROJ.SysUser WHERE userID = @uID AND AES_DECRYPT(email, userKey) = INemail;
-		-- DELETE FROM PECI_PROJ.PrivateExercise WHERE (instID,exeID) IS NOT NULL AND forClientID = @uID;
-		-- DELETE FROM PECI_PROJ.PrivateProgram WHERE (instID, progID) IN ( SELECT (temp.instID, temp.progID) FROM (SELECT (instID, progID) FROM PECI_PROJ.PrivateProgram WHERE forClientID = @uID;) AS temp);
+		DELETE FROM PECI_PROJ.PrivateExercise WHERE instID <> 0 AND exeID <> 0 AND forClientID = @uID;
+        DELETE FROM PECI_PROJ.PrivateProgram WHERE instID <> 0 AND progID <> 0 AND forClientID = @uID;
 	COMMIT;
 END $$
 DELIMITER ;
@@ -53,7 +53,6 @@ BEGIN
 		INSERT INTO PECI_PROJ.PhysicalData (height, weight, fitness, BMI) VALUES (INheight, INweight, INfitness, INbmi);
 		SELECT LAST_INSERT_ID() INTO @pid;
 		INSERT INTO PECI_PROJ.ProgressLog (progClientID, physicDataID) VALUES (@uid, @pid);
-		SELECT row_count();
 	COMMIT;
 END $$
 DELIMITER ;
@@ -135,9 +134,10 @@ DELIMITER ;
 
 -- Testes --
 CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'chave');
+CALL spAddClientInfo('t321312este@mail.com', '123', '123', 'fitness', '321', 'pathologies', 'chave');
 CALL spSelectClient('t321312este@mail.com','chave');
 CALL spDeleteClient('t321312este@mail.com','chave');
-CALL spAddClientInfo('t321312este@mail.com', '123', '123', 'fitness', '321', 'pathologies', 'chave');
+
 
 CALL spCreateClient('te31231231ste@mail.com','te312312ste','1234','chave');
 CALL spCreateClient('tes3231231te@mail.com','tes312312te','1234','chave');
