@@ -1,11 +1,12 @@
 USE PECI_PROJ;
-
--- SPs FOR MOBILE COMPONENT --
+-- -- -- -- -- -- -- -- -- -- 
+-- SPs FOR MOBILE COMPONENT -
+-- -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
-CREATE PROCEDURE spCreateClient (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex CHAR(1), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INnif NVARCHAR(255), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spCreateClient (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex CHAR(1), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN userKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
-		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country, NIF) VALUES (AES_ENCRYPT(INemail, userKey), AES_ENCRYPT(INfirstName, userKey), AES_ENCRYPT(INlastName, userKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, userKey), AES_ENCRYPT(INpostCode, userKey), AES_ENCRYPT(INcity, userKey), AES_ENCRYPT(INcountry, userKey), AES_ENCRYPT(INnif, userKey));
+		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country) VALUES (AES_ENCRYPT(INemail, userKey), AES_ENCRYPT(INfirstName, userKey), AES_ENCRYPT(INlastName, userKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, userKey), AES_ENCRYPT(INpostCode, userKey), AES_ENCRYPT(INcity, userKey), AES_ENCRYPT(INcountry, userKey));
 		SELECT userID INTO @cID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = Inemail;
 		INSERT INTO PECI_PROJ.SysClient (clientId) VALUES (@cID);
     COMMIT;
@@ -24,7 +25,6 @@ BEGIN
                             CONVERT(AES_DECRYPT(postCode, userKey) USING utf8) AS postCode,
                             CONVERT(AES_DECRYPT(city, userKey) USING utf8) AS city,
                             CONVERT(AES_DECRYPT(country, userKey) USING utf8) AS country,
-                            CONVERT(AES_DECRYPT(NIF, userKey) USING utf8) AS NIF,
                             pathologies AS pathologies
                             FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysClient ON SysUser.userID = SysClient.clientID) AS t1 WHERE t1.mail = INemail;
 END $$
@@ -67,11 +67,9 @@ END $$
 DELIMITER ;
 
 
---
--- SPs FOR WEB COMPONENT --
---
-
-
+-- -- -- -- -- -- -- -- -- 
+-- SPs FOR WEB COMPONENT 
+-- -- -- -- -- -- -- -- -- 
 DELIMITER $$
 CREATE PROCEDURE spSelectAllClients (IN userKey NVARCHAR(255))
 BEGIN
@@ -135,29 +133,14 @@ END $$
 DELIMITER ;   
  
 
-DELIMITER $$
-CREATE PROCEDURE spAddExerToProgram (IN pname NVARCHAR(255))
-START TRANSACTION;
-
-SELECT
-
-
-FROM
-    
-    
-COMMIT;
-DELIMITER
-
-
 -- Testes --
-CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'nif', 'chave');
+CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'chave');
 CALL spSelectClient('t321312este@mail.com','chave');
 CALL spDeleteClient('t321312este@mail.com','chave');
 CALL spAddClientInfo('t321312este@mail.com', '123', '123', 'fitness', '321', 'pathologies', 'chave');
 
 CALL spCreateClient('te31231231ste@mail.com','te312312ste','1234','chave');
 CALL spCreateClient('tes3231231te@mail.com','tes312312te','1234','chave');
-
 
 CALL spSelectClient('teste@mail.com','chave');
 
@@ -167,8 +150,8 @@ CALL spAddClientInfo('teste@mail.com', '20', '123', '123', 'fitness', 'pathologi
 
 CALL spSelectClientInfo('teste@mail.com','chave');
 
--- webapp
 
+-- webapp
 CALL spCreateClient('teste@mail.com','teste','123123134','chave');
 CALL spCreateExercise('teeqweqwedasdsawqste','x','teqweqweqeste' ,'teeqweqwste' ,'teseqwewqte' ,'teste');
 CALL spCreateProgram('teste','x','teste');
