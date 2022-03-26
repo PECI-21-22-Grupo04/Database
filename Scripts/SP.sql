@@ -2,38 +2,59 @@ USE PECI_PROJ;
 
 -- SPs FOR MOBILE COMPONENT --
 DELIMITER $$
-CREATE PROCEDURE spCreateClient (IN Inemail NVARCHAR(255), IN fName NVARCHAR(255), IN lName NVARCHAR(255), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spCreateClient (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex CHAR(1), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INnif NVARCHAR(255), IN userKey NVARCHAR(255))
 BEGIN
-	INSERT INTO PECI_PROJ.Clients (email, firstName, lastName) VALUES (AES_ENCRYPT(Inemail, userKey), AES_ENCRYPT(fName, userKey), AES_ENCRYPT(lName, userKey));
+	START TRANSACTION;
+		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country, NIF) VALUES (AES_ENCRYPT(INemail, userKey), AES_ENCRYPT(INfirstName, userKey), AES_ENCRYPT(INlastName, userKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, userKey), AES_ENCRYPT(INpostCode, userKey), AES_ENCRYPT(INcity, userKey), AES_ENCRYPT(INcountry, userKey), AES_ENCRYPT(INnif, userKey));
+		SELECT userID INTO @cID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = Inemail;
+		INSERT INTO PECI_PROJ.SysClient (clientId) VALUES (@cID);
+    COMMIT;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectClient (IN Inemail NVARCHAR(255), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spSelectClient (IN INemail NVARCHAR(255), IN userKey NVARCHAR(255))
 BEGIN
-    SELECT * FROM (SELECT CONVERT(AES_DECRYPT(email, userKey) USING utf8) AS mail , CONVERT(AES_DECRYPT(firstName, userKey) USING utf8) AS fName , CONVERT(AES_DECRYPT(lastName, userKey) USING utf8) AS lName FROM PECI_PROJ.Clients) AS t1 WHERE t1.mail = Inemail;
+    SELECT * FROM (SELECT 	CONVERT(AES_DECRYPT(email, userKey) USING utf8) AS mail,
+							CONVERT(AES_DECRYPT(firstName, userKey) USING utf8) AS firstName,
+                            CONVERT(AES_DECRYPT(lastName, userKey) USING utf8) AS lastName,
+                            birthdate AS birthDate,
+                            sex AS sex,
+                            CONVERT(AES_DECRYPT(street, userKey) USING utf8) AS street,
+                            CONVERT(AES_DECRYPT(postCode, userKey) USING utf8) AS postCode,
+                            CONVERT(AES_DECRYPT(city, userKey) USING utf8) AS city,
+                            CONVERT(AES_DECRYPT(country, userKey) USING utf8) AS country,
+                            CONVERT(AES_DECRYPT(NIF, userKey) USING utf8) AS NIF,
+                            pathologies AS pathologies
+                            FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysClient ON SysUser.userID = SysClient.clientID) AS t1 WHERE t1.mail = INemail;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spDeleteClient (IN Inemail NVARCHAR(255), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spDeleteClient (IN INemail NVARCHAR(255), IN userKey NVARCHAR(255))
 BEGIN
-	SELECT clientID INTO @uID FROM (SELECT clientID, email FROM PECI_PROJ.Clients) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = Inemail;
-    DELETE FROM PECI_PROJ.Clients WHERE clientID = @uID AND AES_DECRYPT(email, userKey) = Inemail;
+	START TRANSACTION;
+		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = INemail;
+		DELETE FROM PECI_PROJ.SysUser WHERE userID = @uID AND AES_DECRYPT(email, userKey) = INemail;
+		-- DELETE FROM PECI_PROJ.PrivateExercise WHERE (instID,exeID) IS NOT NULL AND forClientID = @uID;
+		-- DELETE FROM PECI_PROJ.PrivateProgram WHERE (instID, progID) IN ( SELECT (temp.instID, temp.progID) FROM (SELECT (instID, progID) FROM PECI_PROJ.PrivateProgram WHERE forClientID = @uID;) AS temp);
+	COMMIT;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spAddClientInfo (IN Inemail NVARCHAR(255), IN age INT, IN height INT, IN weight INT, IN fitness NVARCHAR(255), IN pathologies NVARCHAR(1024), IN userKey NVARCHAR(255))
+CREATE PROCEDURE spAddClientInfo (IN Inemail NVARCHAR(255), IN INheight INT, IN INweight INT, IN INfitness NVARCHAR(255), IN INbmi INT, IN INpathologies NVARCHAR(1024), IN userKey NVARCHAR(255))
 BEGIN
-	SELECT clientID INTO @uID FROM (SELECT clientID, CONVERT(AES_DECRYPT(email, userKey) USING utf8) AS mail FROM PECI_PROJ.Clients) AS t1 WHERE t1.mail = Inemail;
-    UPDATE PECI_PROJ.Clients
-    SET age = age,
-		height = height,
-        weight = weight,
-        fitness = fitness,
-        pathologies = pathologies
-	WHERE clientID = @uID AND AES_DECRYPT(email, userKey) = Inemail;
+	START TRANSACTION;
+		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, userKey) USING utf8) = INemail;
+		UPDATE PECI_PROJ.SysClient
+			SET pathologies = INpathologies
+			WHERE clientID = @uID;
+		INSERT INTO PECI_PROJ.PhysicalData (height, weight, fitness, BMI) VALUES (INheight, INweight, INfitness, INbmi);
+		SELECT LAST_INSERT_ID() INTO @pid;
+		INSERT INTO PECI_PROJ.ProgressLog (progClientID, physicDataID) VALUES (@uid, @pid);
+		SELECT row_count();
+	COMMIT;
 END $$
 DELIMITER ;
 
@@ -49,7 +70,6 @@ DELIMITER ;
 --
 -- SPs FOR WEB COMPONENT --
 --
-
 
 
 DELIMITER $$
@@ -130,9 +150,11 @@ DELIMITER
 
 
 -- Testes --
+CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'nif', 'chave');
+CALL spSelectClient('t321312este@mail.com','chave');
+CALL spDeleteClient('t321312este@mail.com','chave');
+CALL spAddClientInfo('t321312este@mail.com', '123', '123', 'fitness', '321', 'pathologies', 'chave');
 
-
-CALL spCreateClient('t321312este@mail.com','te31231231ste','1234','chave');
 CALL spCreateClient('te31231231ste@mail.com','te312312ste','1234','chave');
 CALL spCreateClient('tes3231231te@mail.com','tes312312te','1234','chave');
 
