@@ -88,25 +88,25 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spSelectAllPrograms ()
 BEGIN
-     SELECT p_name  , p_description , thumbnailPath   FROM PECI_PROJ.Programs as t1;
+     SELECT pName  , pDescription , thumbnailPath   FROM PECI_PROJ.Program as t1;
     
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateExercise (IN ename NVARCHAR(255), IN edifficulty NVARCHAR(32), IN edescription NVARCHAR(255), IN etargetMuscle NVARCHAR(255), IN ethumbnailPath NVARCHAR(255), IN evideoPath NVARCHAR(255))
+CREATE PROCEDURE spCreateExercise (IN ename NVARCHAR(255), IN edifficulty NVARCHAR(32), IN edescription NVARCHAR(255), IN etargetMuscle NVARCHAR(255), IN ethumbnailPath NVARCHAR(255), IN evideoPath NVARCHAR(255), IN ispublic BIT(1))
 BEGIN
 	-- START TRANSACTION;
-        INSERT INTO PECI_PROJ.Exercise (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
+       INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath, ispublic);
 	-- INSERT INTO PECI_PROJ.PrivateExercises (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
    -- COMMIT;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateProgram (IN pname NVARCHAR(128), IN  pdescription NVARCHAR(255), IN pthumbnailPath NVARCHAR(128))
+CREATE PROCEDURE spCreateProgram (IN pname NVARCHAR(255), IN  pdescription NVARCHAR(1024), IN pthumbnailPath NVARCHAR(255),IN pvideoPath NVARCHAR(255))
 BEGIN
-	INSERT INTO PECI_PROJ.Programs (p_name, p_description, thumbnailPath) VALUES (pname, pdescription, pthumbnailPath);
+	INSERT INTO PECI_PROJ.Program (pName, pDescription, thumbnailPath, videoPath) VALUES (pname, pdescription, pthumbnailPath, pvideoPath);
 END $$
 DELIMITER ;
 
@@ -120,14 +120,14 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spSelectExerFromThumb (IN ethumbnailPath NVARCHAR(255))
 BEGIN
-    SELECT * FROM  PECI_PROJ.Exercises AS t1 WHERE t1.thumbnailPath = ethumbnailPath;
+    SELECT * FROM  PECI_PROJ.Exercise AS t1 WHERE t1.thumbnailPath = ethumbnailPath;
 END $$
 DELIMITER ;
 
 DELIMITER $$
 CREATE PROCEDURE spSelectProgramFromName (IN pname NVARCHAR(255))
 BEGIN
-    SELECT * FROM  PECI_PROJ.Programs AS t1 WHERE t1.p_name = pname;
+    SELECT * FROM  PECI_PROJ.Program AS t1 WHERE t1.pName = pname;
 END $$
 DELIMITER ;   
  
@@ -153,11 +153,12 @@ CALL spSelectClientInfo('teste@mail.com','chave');
 
 -- webapp
 CALL spCreateClient('teste@mail.com','teste','123123134','chave');
-CALL spCreateExercise('teeqweqwedasdsawqste','x','teqweqweqeste' ,'teeqweqwste' ,'teseqwewqte' ,'teste');
-CALL spCreateProgram('teste','x','teste');
+CALL spCreateExercise('teeqweqwedasdsawqste','x','teqweqweqeste' ,'teeqweqwste' ,'teseqwewqte' ,'teste', 1 );
+CALL spCreateProgram('teste','x','teste','teste');
 CALL spCreateInstructor('teste','teste','123123134', '123', 'chave');
 CALL spSelectAllClients('chave');
 CALL spSelectAllExercises();
 CALL spSelectAllPrograms();
 CALL spSelectExerFromThumb("public/exercises/bfe2373c0092bd0623e692e97499ad10");
 CALL spSelectProgramFromName("dsadass");
+
