@@ -80,7 +80,7 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spSelectAllExercises ()
 BEGIN
-     SELECT e_name ,difficulty , e_description , targetMuscle, thumbnailPath   FROM PECI_PROJ.Exercises as t1;
+     SELECT eName ,difficulty , eDescription , targetMuscle, thumbnailPath   FROM PECI_PROJ.Exercise as t1;
     
 END $$
 DELIMITER ;
@@ -97,7 +97,7 @@ DELIMITER $$
 CREATE PROCEDURE spCreateExercise (IN ename NVARCHAR(255), IN edifficulty NVARCHAR(32), IN edescription NVARCHAR(255), IN etargetMuscle NVARCHAR(255), IN ethumbnailPath NVARCHAR(255), IN evideoPath NVARCHAR(255))
 BEGIN
 	-- START TRANSACTION;
-        INSERT INTO PECI_PROJ.Exercises (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
+        INSERT INTO PECI_PROJ.Exercise (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
 	-- INSERT INTO PECI_PROJ.PrivateExercises (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
    -- COMMIT;
 END $$
