@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.ProgressLog(
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.AffiliationLog(
-	affID			INT				AUTO_INCREMENT,
+	affID			INT			AUTO_INCREMENT,
 	affClientID		INT,
     affInstID		INT,
     PRIMARY KEY(affID, affClientID, affInstID)
