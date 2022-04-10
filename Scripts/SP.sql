@@ -70,6 +70,24 @@ DELIMITER ;
 -- SPs FOR WEB COMPONENT 
 -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
+CREATE PROCEDURE spSelectInstructor (IN INemail NVARCHAR(255), IN userKey NVARCHAR(255))
+BEGIN
+    SELECT * FROM (SELECT 	CONVERT(AES_DECRYPT(email, userKey) USING utf8) AS mail,
+							CONVERT(AES_DECRYPT(firstName, userKey) USING utf8) AS firstName,
+                            CONVERT(AES_DECRYPT(lastName, userKey) USING utf8) AS lastName,
+                            birthdate AS birthDate,
+                            sex AS sex,
+                            CONVERT(AES_DECRYPT(street, userKey) USING utf8) AS street,
+                            CONVERT(AES_DECRYPT(postCode, userKey) USING utf8) AS postCode,
+                            CONVERT(AES_DECRYPT(city, userKey) USING utf8) AS city,
+                            CONVERT(AES_DECRYPT(country, userKey) USING utf8) AS country,
+                     		CONVERT(AES_DECRYPT(paypalAccount, userKey) USING utf8) AS paypalAcc,
+                     		CONVERT(AES_DECRYPT(contactNumber, userKey) USING utf8) AS contactNumber,
+                     		maxClients
+                            FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysInstructor ON SysUser.userID = SysInstructor.InstructorID) AS t1 WHERE t1.mail = INemail;
+END $$
+DELIMITER ;
+DELIMITER $$
 CREATE PROCEDURE spCreateInstructor (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN IncontactNumber NVARCHAR(255), IN InpaypalAccount NVARCHAR(255), IN InmaxClients INT, IN userKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
@@ -125,12 +143,6 @@ BEGIN
 END $$
 DELIMITER ;
 
-DELIMITER $$
-CREATE PROCEDURE spCreateInstructor (IN iemail VARBINARY(255), IN  ifirst VARBINARY(255) , IN ilast VARBINARY(255) , IN iphoneNumber VARBINARY(255), IN userKey  NVARCHAR(255))
-BEGIN
-	INSERT INTO PECI_PROJ.Instructors (email, firstName, lastName, phoneNumber) VALUES (AES_ENCRYPT(iemail, userKey), AES_ENCRYPT(ifirst, userKey), AES_ENCRYPT(ilast, userKey), AES_ENCRYPT(iphoneNumber, userKey));
-END $$
-DELIMITER ;
 
 DELIMITER $$
 CREATE PROCEDURE spSelectExerFromThumb (IN ethumbnailPath NVARCHAR(255))
@@ -148,8 +160,9 @@ DELIMITER ;
  
 
 -- Testes --
-CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'chave');
+CALL spCreateClient('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'chave','chave');
 CALL spAddClientInfo('t321312este@mail.com', '123', '123', 'fitness', '321', 'pathologies', 'chave');
+
 CALL spSelectClient('t321312este@mail.com','chave');
 CALL spDeleteClient('t321312este@mail.com','chave');
 
@@ -168,6 +181,8 @@ CALL spSelectClientInfo('teste@mail.com','chave');
 
 -- webapp
 CALL spCreateInstructor('t321312este@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'chave');
+CALL spSelectInstructor('t321312este@mail.com','chave');
+CALL spCreateInstructor('t321asdf312este@mail.com','tesasdfte','12fasd34', '1999-01-01', 'M', 'rufasa', '3000-500', 'cidfdasade', 'asdfpais', 'contactNasdfaumber', 'paypalAccasfdaount', 0, 'chavadse');
 CALL spCreateExercise('teeqweqwedasdsawqste','x','teqweqweqeste' ,'teeqweqwste' ,'teseqwewqte' ,'teste', 1 );
 CALL spCreateProgram('teste','x','teste','teste');
 CALL spCreateInstructor('teste','teste','123123134', '123', 'chave');
