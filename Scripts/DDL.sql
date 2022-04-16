@@ -43,9 +43,10 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysClient(
 CREATE TABLE IF NOT EXISTS PECI_PROJ.Exercise(
 	exerciseID		INT				AUTO_INCREMENT,
     eName			NVARCHAR(255)	NOT NULL,
-    difficulty		NVARCHAR(255)	NOT NULL,
+    difficulty		NVARCHAR(32)	NOT NULL,
     eDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
-    targetMuscle	NVARCHAR(128)	NOT NULL DEFAULT "",
+    forPathology	NVARCHAR(64)	NOT NULL DEFAULT "",
+    targetMuscle	NVARCHAR(255)	NOT NULL DEFAULT "",
     thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
@@ -56,6 +57,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Program(
 	programID		INT				AUTO_INCREMENT,
     pName			NVARCHAR(255)	NOT NULL,
     pDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
+    forPathology	NVARCHAR(64)	NOT NULL DEFAULT "",
     thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
@@ -148,7 +150,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.ProgressLog(
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.AffiliationLog(
-	affID			INT			AUTO_INCREMENT,
+	affID			INT,
 	affClientID		INT,
     affInstID		INT,
     PRIMARY KEY(affID, affClientID, affInstID)

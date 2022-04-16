@@ -92,8 +92,8 @@ BEGIN
 	IF (@currentlyAssociated = 0 OR @currentlyAssociated IS NULL) THEN
 		START TRANSACTION;
 			INSERT INTO PECI_PROJ.Affiliation (signedDate) VALUES (CURRENT_TIMESTAMP);
-			SELECT LAST_INSERT_ID() INTO @pid;
-			INSERT INTO PECI_PROJ.AffiliationLog (affClientID, affInstID) VALUES (@cID, @iID);
+			SELECT LAST_INSERT_ID() INTO @aID;
+			INSERT INTO PECI_PROJ.AffiliationLog VALUES (@aID, @cID, @iID);
 		COMMIT;
 	ELSE
 		START TRANSACTION;
@@ -101,8 +101,8 @@ BEGIN
 			SET canceledDate = CURRENT_TIMESTAMP
 			WHERE affiliationID = @currentlyAssociated;
             INSERT INTO PECI_PROJ.Affiliation (signedDate) VALUES (CURRENT_TIMESTAMP);
-			SELECT LAST_INSERT_ID() INTO @pid;
-			INSERT INTO PECI_PROJ.AffiliationLog (affClientID, affInstID) VALUES (@cID, @iID);
+			SELECT LAST_INSERT_ID() INTO @aID;
+			INSERT INTO PECI_PROJ.AffiliationLog VALUES (@aID, @cID, @iID);
 		COMMIT;
 	END IF;
 END $$
@@ -184,15 +184,15 @@ DELIMITER ;
 -- SPs FOR WEB COMPONENT 
 -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
-CREATE PROCEDURE spCreateInstructor (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN IncontactNumber NVARCHAR(255), IN InpaypalAccount NVARCHAR(255), IN InmaxClients INT, IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateInstructor (IN INemail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN dbKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
 		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country) VALUES (AES_ENCRYPT(INemail, dbKey), AES_ENCRYPT(INfirstName, dbKey), AES_ENCRYPT(INlastName, dbKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, dbKey), AES_ENCRYPT(INpostCode, dbKey), AES_ENCRYPT(INcity, dbKey), AES_ENCRYPT(INcountry, dbKey));
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INemail;
-        IF(InmaxClients = 0) THEN
-			INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(IncontactNumber, dbKey), AES_ENCRYPT(InpaypalAccount, dbKey));
+        IF(INmaxClients = 0) THEN
+			INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey));
         ELSE
-			INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(IncontactNumber, dbKey), AES_ENCRYPT(InpaypalAccount, dbKey), InmaxClients); 
+			INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients); 
 		END IF;
     COMMIT;
 END $$
@@ -231,42 +231,102 @@ BEGIN
 						DATE(signedDate) AS clientSince	
 		FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 			INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
-			WHERE canceledDate IS NULL AND affInstID=@iID) AS finalTbl;    
+			WHERE canceledDate IS NULL AND affInstID = @iID) AS finalTbl;    
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectAllExercises ()
+CREATE PROCEDURE spSelectDefaultExercises()
 BEGIN
-     SELECT eName ,difficulty , eDescription , targetMuscle, thumbnailPath   FROM PECI_PROJ.Exercise as t1;
+     SELECT * FROM PECI_PROJ.freePublicExercises;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spSelectDefaultPrograms()
+BEGIN
+     SELECT * FROM PECI_PROJ.freePublicPrograms;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INforClientID INT, IN dbKey NVARCHAR(255))
+BEGIN
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
     
+    IF (INforClientID IS NULL OR INforClientID = '') THEN
+		START TRANSACTION;
+			INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
+			SELECT LAST_INSERT_ID() INTO @exeID;
+            INSERT INTO PECI_PROJ.PrivateExercise (instID, exeID) VALUES (@iID, @exeID);
+		COMMIT;
+        
+	ELSE
+		START TRANSACTION;
+			INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
+			SELECT LAST_INSERT_ID() INTO @exeID;
+            INSERT INTO PECI_PROJ.PrivateExercise (instID, exeID, forClientID) VALUES (@iID, @exeID, INforClientID);
+		COMMIT;
+        
+	END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectAllPrograms ()
+CREATE PROCEDURE spCreateProgram (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INforClientID INT, IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
 BEGIN
-     SELECT pName  , pDescription , thumbnailPath   FROM PECI_PROJ.Program as t1;
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
     
+    IF (INforClientID IS NULL OR INforClientID = '') THEN
+		START TRANSACTION;
+			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath);
+			SELECT LAST_INSERT_ID() INTO @progID;
+			IF(INshowcaseProg = 1) THEN
+				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, showcaseProg) VALUES (@iID, @progID, INshowcaseProg);
+            ELSE
+				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID) VALUES (@iID, @progID);
+			END IF;
+		COMMIT;
+        
+	ELSE
+		START TRANSACTION;
+			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath);
+			SELECT LAST_INSERT_ID() INTO @progID;
+            IF(INshowcaseProg = 1) THEN
+				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, forClientID, INshowcaseProg) VALUES (@iID, @progID, INforClientID, INshowcaseProg);
+            ELSE
+				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, forClientID) VALUES (@iID, @progID, INforClientID);
+			END IF;
+		COMMIT;
+        
+	END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateExercise (IN ename NVARCHAR(255), IN edifficulty NVARCHAR(32), IN edescription NVARCHAR(255), IN etargetMuscle NVARCHAR(255), IN ethumbnailPath NVARCHAR(255), IN evideoPath NVARCHAR(255), IN ispublic BIT(1))
+CREATE PROCEDURE spSelectInstructorExercises (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
 BEGIN
-	-- START TRANSACTION;
-       INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath, ispublic);
-	-- INSERT INTO PECI_PROJ.PrivateExercises (e_name, difficulty, e_description, targetMuscle, thumbnailPath, videoPath) VALUES (ename, edifficulty, edescription, etargetMuscle, ethumbnailPath, evideoPath);
-   -- COMMIT;
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+	
+    SELECT exerciseID, eName, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, forClientID, createdDate 
+	FROM PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PrivateExercise ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PrivateExercise.exeID
+	WHERE instID = @iID;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateProgram (IN pname NVARCHAR(255), IN  pdescription NVARCHAR(1024), IN pthumbnailPath NVARCHAR(255),IN pvideoPath NVARCHAR(255))
+CREATE PROCEDURE spSelectInstructorPrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
 BEGIN
-	INSERT INTO PECI_PROJ.Program (pName, pDescription, thumbnailPath, videoPath) VALUES (pname, pdescription, pthumbnailPath, pvideoPath);
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+
+    SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, forClientID, createdDate, showcaseProg 
+	FROM PECI_PROJ.Program INNER JOIN PECI_PROJ.PrivateProgram ON PECI_PROJ.Program.programID = PECI_PROJ.PrivateProgram.progID
+	WHERE instID = @iID;
 END $$
 DELIMITER ;
+
+
+
 
 
 DELIMITER $$
@@ -283,10 +343,15 @@ BEGIN
 END $$
 DELIMITER ;   
  
+-- INSERIR DADOS NA BD --
+INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES ('defaultExercise1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1);
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES ('defaultExercise2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1);
+INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1);
+INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1);
+
 
 -- TESTES MOBILE APP --
-INSERT INTO Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
-
 CALL spCreateClient('client@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'chave');
 CALL spSelectClient('client@mail.com','chave');
 
@@ -316,12 +381,21 @@ CALL spDeleteClient('client@mail.com','chave');
 CALL spCreateInstructor('instructor@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'chave');
 CALL spCreateInstructor('instructorNumber2@mail.com','teste','1234', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 123, 'chave');
 CALL spSelectInstructor('instructor@mail.com','chave');
+
 CALL spSelectInstructorClients('instructor@mail.com', 'chave');
-CALL spCreateExercise('teeqweqwedasdsawqste','x','teqweqweqeste' ,'teeqweqwste' ,'teseqwewqte' ,'teste', 1 );
-CALL spCreateProgram('teste','x','teste','teste');
-CALL spCreateInstructor('teste','teste','123123134', '123', 'chave');
-CALL spSelectAllClients('chave');
-CALL spSelectAllExercises();
-CALL spSelectAllPrograms();
+
+CALL spCreateExercise('instructor@mail.com', 'exer123', 'advanced', 'Lie on the floor and do a pushup', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', null, 'chave');
+CALL spCreateExercise('instructorNumber2@mail.com', '123xer', 'beginner', 'Do a pullup', '', 'back' ,'thumbnailpath/here', 'videopath/here', 3, 'chave');
+CALL spSelectInstructorExercises('instructor@mail.com', 'chave');
+
+CALL spCreateProgram('instructor@mail.com', 'prog123', 'Very easy program', 'Pregnant', 'thumbnailpath/here', 'videopath/here', null, 1, 'chave');
+CALL spCreateProgram('instructorNumber2@mail.com', '123prog', 'idk', '', 'thumbnailpath/here', 'videopath/here', 3, 0, 'chave');
+CALL spSelectInstructorPrograms('instructor@mail.com', 'chave');
+
+CALL spSelectDefaultExercises();
+CALL spSelectDefaultProgram();
+
+
+
 CALL spSelectExerFromThumb("public/exercises/bfe2373c0092bd0623e692e97499ad10");
 CALL spSelectProgramFromName("dsadass");
