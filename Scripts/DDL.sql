@@ -46,8 +46,8 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Exercise(
     difficulty		NVARCHAR(255)	NOT NULL,
     eDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
     targetMuscle	NVARCHAR(128)	NOT NULL DEFAULT "",
-    thumbnailPath	NVARCHAR(255)	NOT NULL,
-    videoPath		NVARCHAR(255)	NOT NULL,
+    thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
+    videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
     PRIMARY KEY(exerciseID)
 );
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Program(
 	programID		INT				AUTO_INCREMENT,
     pName			NVARCHAR(255)	NOT NULL,
     pDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
-    thumbnailPath	NVARCHAR(255)	NOT NULL,
-    videoPath		NVARCHAR(255)	NOT NULL,
+    thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
+    videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
     PRIMARY KEY(programID)
 );
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Reward(
 	rewardID		INT				AUTO_INCREMENT,
     rewardName		NVARCHAR(1024)	NOT NULL UNIQUE,
 	rDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
-    thumbnailPath	NVARCHAR(255)	NOT NULL,
+    thumbnailPath	NVARCHAR(255)	NOT NULL DEFAULT "",
     PRIMARY KEY(rewardID)
 );
 
@@ -156,16 +156,16 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.AffiliationLog(
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.ReviewLog(
 	revClientID		INT,
-	revIntsID		INT,
+	revInstID		INT,
     rating			INT,
     review			NVARCHAR(255)	DEFAULT "",
     reviewDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(revClientID, revIntsID),
+    PRIMARY KEY(revClientID, revInstID),
     CHECK (rating IN (0, 1, 2, 3, 4, 5))
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.RewardLog(
-	rewID			INT				AUTO_INCREMENT,
+	rewID			INT,
 	rewClientID		INT,
     receivedDate	DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(rewID, rewClientID)
@@ -250,7 +250,7 @@ FOREIGN KEY (revClientID) REFERENCES PECI_PROJ.SysClient(ClientID) ON DELETE CAS
 
 ALTER TABLE PECI_PROJ.ReviewLog
 ADD CONSTRAINT FK_reviewLog_instructorID
-FOREIGN KEY (revIntsID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
+FOREIGN KEY (revInstID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
 
 ALTER TABLE PECI_PROJ.RewardLog
 ADD CONSTRAINT FK_reviewLog_rewardID
