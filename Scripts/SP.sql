@@ -37,8 +37,6 @@ BEGIN
 	START TRANSACTION;
 		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INemail;
 		DELETE FROM PECI_PROJ.SysUser WHERE userID <> 0 AND AES_DECRYPT(email, dbKey) = INemail;
-		DELETE FROM PECI_PROJ.PrivateExercise WHERE instID <> 0 AND exeID <> 0 AND forClientID = @uID;
-		DELETE FROM PECI_PROJ.PrivateProgram WHERE instID <> 0 AND progID <> 0 AND forClientID = @uID;
 	COMMIT;
 END $$
 DELIMITER ;
@@ -132,7 +130,7 @@ END $$
 DELIMITER ;
 
 DELIMITER $$ 
-CREATE PROCEDURE spSelectInstructorHistory (IN INemail NVARCHAR(255), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spSelectClientInstructorHistory (IN INemail NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INemail;	
     SELECT 	mail,
@@ -250,56 +248,32 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INforClientID INT, IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
     
-    IF (INforClientID IS NULL OR INforClientID = '') THEN
-		START TRANSACTION;
-			INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
-			SELECT LAST_INSERT_ID() INTO @exeID;
-            INSERT INTO PECI_PROJ.PrivateExercise (instID, exeID) VALUES (@iID, @exeID);
-		COMMIT;
-        
+    IF (@iID IS NULL OR @iID = '') THEN
+		INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
 	ELSE
-		START TRANSACTION;
-			INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
-			SELECT LAST_INSERT_ID() INTO @exeID;
-            INSERT INTO PECI_PROJ.PrivateExercise (instID, exeID, forClientID) VALUES (@iID, @exeID, INforClientID);
-		COMMIT;
-        
+		INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, creatorIntsID) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath, @iID);
 	END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateProgram (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INforClientID INT, IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateProgram (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
 BEGIN
 	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
     
-    IF (INforClientID IS NULL OR INforClientID = '') THEN
-		START TRANSACTION;
-			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath);
-			SELECT LAST_INSERT_ID() INTO @progID;
-			IF(INshowcaseProg = 1) THEN
-				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, showcaseProg) VALUES (@iID, @progID, INshowcaseProg);
-            ELSE
-				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID) VALUES (@iID, @progID);
-			END IF;
-		COMMIT;
-        
+    IF (@iID IS NULL OR @iID = '') THEN
+		INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath);
 	ELSE
-		START TRANSACTION;
-			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath);
-			SELECT LAST_INSERT_ID() INTO @progID;
-            IF(INshowcaseProg = 1) THEN
-				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, forClientID, INshowcaseProg) VALUES (@iID, @progID, INforClientID, INshowcaseProg);
-            ELSE
-				INSERT INTO PECI_PROJ.PrivateProgram (instID, progID, forClientID) VALUES (@iID, @progID, INforClientID);
-			END IF;
-		COMMIT;
-        
-	END IF;
+		IF(INshowcaseProg = 0) THEN
+			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, creatorIntsID) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath, @iID);
+        ELSE
+			INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, creatorIntsID) VALUES (INname, INdescription, INforPathology, INthumbnailPath, INvideoPath, INshowcaseProg, @iID);
+		END IF;
+    END IF;
 END $$
 DELIMITER ;
 
@@ -308,9 +282,9 @@ CREATE PROCEDURE spSelectInstructorExercises (IN INinstructorEmail NVARCHAR(255)
 BEGIN
 	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
 	
-    SELECT exerciseID, eName, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, forClientID, createdDate 
-	FROM PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PrivateExercise ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PrivateExercise.exeID
-	WHERE instID = @iID;
+    SELECT 	exerciseID, eName, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
+	FROM 	PECI_PROJ.Exercise
+	WHERE 	creatorIntsID = @iID;
 END $$
 DELIMITER ;
 
@@ -319,36 +293,56 @@ CREATE PROCEDURE spSelectInstructorPrograms (IN INinstructorEmail NVARCHAR(255),
 BEGIN
 	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
 
-    SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, forClientID, createdDate, showcaseProg 
-	FROM PECI_PROJ.Program INNER JOIN PECI_PROJ.PrivateProgram ON PECI_PROJ.Program.programID = PECI_PROJ.PrivateProgram.progID
-	WHERE instID = @iID;
-END $$
-DELIMITER ;
-
-
-
-
-
-DELIMITER $$
-CREATE PROCEDURE spSelectExerFromThumb (IN ethumbnailPath NVARCHAR(255))
-BEGIN
-    SELECT * FROM  PECI_PROJ.Exercise AS t1 WHERE t1.thumbnailPath = ethumbnailPath;
+    SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, createDate
+	FROM PECI_PROJ.Program
+	WHERE creatorIntsID = @iID;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectProgramFromName (IN pname NVARCHAR(255))
+CREATE PROCEDURE spAddExerciseToProgram (IN INprogramID INT, INexerciseID INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
 BEGIN
-    SELECT * FROM  PECI_PROJ.Program AS t1 WHERE t1.pName = pname;
+	INSERT INTO PECI_PROJ.PlanIncludes (progID, exeID, numSets, numReps, durationTime) VALUES (INprogramID, INexerciseID, INnumSets, INnumReps, INdurationTime);
 END $$
-DELIMITER ;   
- 
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spSelectProgramExercises (IN INprogramID INT)
+BEGIN
+	SELECT 	exerciseID, eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate, numSets, numReps, durationTime 
+    FROM 	PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PlanIncludes ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PlanIncludes.exeID 
+    WHERE	progID = INprogramID;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spSelectInstructorShowcasePrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
+BEGIN
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+
+    SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, createDate
+	FROM PECI_PROJ.Program 
+	WHERE (creatorIntsID = @iID AND isShowcaseProg = 1);
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spAssociateProgramToClient (IN INinstructorEmail NVARCHAR(255), IN INclientEmail NVARCHAR(255), IN INprogramID INT, IN dbkey NVARCHAR(255))
+BEGIN
+	SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+	SELECT userID INTO @cID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail;
+	
+	INSERT INTO PECI_PROJ.ClientPrograms (forClientID, instID, progID) VALUES (@cID, @iID, INprogramID);
+END $$
+DELIMITER ;
+
+
 -- INSERIR DADOS NA BD --
 INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES ('defaultExercise1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1);
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic) VALUES ('defaultExercise2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1);
-INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1);
-INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1);
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
 
 
 -- TESTES MOBILE APP --
@@ -366,7 +360,7 @@ CALL spSelectClientPaymentHistory('client@mail.com', 'chave');
 
 CALL spAssociateInstructor('client@mail.com', 'instructor@mail.com', 'chave');
 CALL spAssociateInstructor('client@mail.com', 'instructorNumber2@mail.com', 'chave');
-CALL spSelectInstructorHistory('client@mail.com', 'chave');
+CALL spSelectClientInstructorHistory('client@mail.com', 'chave');
 
 CALL spClientReviewInstructor('client@mail.com', 'instructor@mail.com', 5, null, 'chave');
 CALL spClientReviewInstructor('client@mail.com', 'instructorNumber2@mail.com', 5, 'Very good, has the best plans!', 'chave');
@@ -382,20 +376,22 @@ CALL spCreateInstructor('instructor@mail.com','teste','1234', '1999-01-01', 'M',
 CALL spCreateInstructor('instructorNumber2@mail.com','teste','1234', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 123, 'chave');
 CALL spSelectInstructor('instructor@mail.com','chave');
 
-CALL spSelectInstructorClients('instructor@mail.com', 'chave');
+CALL spSelectInstructorClients('instructorNumber2@mail.com', 'chave');
 
-CALL spCreateExercise('instructor@mail.com', 'exer123', 'advanced', 'Lie on the floor and do a pushup', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', null, 'chave');
-CALL spCreateExercise('instructorNumber2@mail.com', '123xer', 'beginner', 'Do a pullup', '', 'back' ,'thumbnailpath/here', 'videopath/here', 3, 'chave');
+CALL spCreateExercise('instructor@mail.com', 'exer123', 'advanced', 'Lie on the floor and do a pushup', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 'chave');
+CALL spCreateExercise('instructorNumber2@mail.com', '123xer', 'beginner', 'Do a pullup', '', 'back' ,'thumbnailpath/here', 'videopath/here', 'chave');
 CALL spSelectInstructorExercises('instructor@mail.com', 'chave');
 
-CALL spCreateProgram('instructor@mail.com', 'prog123', 'Very easy program', 'Pregnant', 'thumbnailpath/here', 'videopath/here', null, 1, 'chave');
-CALL spCreateProgram('instructorNumber2@mail.com', '123prog', 'idk', '', 'thumbnailpath/here', 'videopath/here', 3, 0, 'chave');
+CALL spCreateProgram('instructor@mail.com', 'prog123', 'Very easy program', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 0, 'chave');
+CALL spCreateProgram('instructor@mail.com', 'progShowcase', 'Somewhat hard', 'AVC', 'thumbnailpath/here', 'videopath/here', 1, 'chave');
+CALL spCreateProgram('instructorNumber2@mail.com', '123prog', 'idk', '', 'thumbnailpath/here', 'videopath/here', 1,'chave');
 CALL spSelectInstructorPrograms('instructor@mail.com', 'chave');
+CALL spSelectInstructorShowcasePrograms('instructor@mail.com', 'chave');
+
+CALL spAddExerciseToProgram(3, 3, 1, 1, '00:00:10');
+CALL spAddExerciseToProgram(2, 3, 1, 1, '00:00:30');
+CALL spSelectProgramExercises(3);
+CALL spAssociateProgramToClient('instructor@mail.com', 'client@mail.com', 3, 'chave');
 
 CALL spSelectDefaultExercises();
-CALL spSelectDefaultProgram();
-
-
-
-CALL spSelectExerFromThumb("public/exercises/bfe2373c0092bd0623e692e97499ad10");
-CALL spSelectProgramFromName("dsadass");
+CALL spSelectDefaultPrograms();

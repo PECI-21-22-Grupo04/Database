@@ -49,7 +49,9 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Exercise(
     targetMuscle	NVARCHAR(255)	NOT NULL DEFAULT "",
     thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
-    isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
+    isPublic		BIT(1)			NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
+    createDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    creatorIntsID	INT,
     PRIMARY KEY(exerciseID)
 );
 
@@ -60,7 +62,10 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Program(
     forPathology	NVARCHAR(64)	NOT NULL DEFAULT "",
     thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
     videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
-    isPublic		BIT				NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
+    isPublic		BIT(1)			NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
+    createDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    isShowcaseProg	BIT(1)			NOT NULL DEFAULT 0, -- 1 -> for showcase, 0 -> not for showcase
+    creatorIntsID	INT,
     PRIMARY KEY(programID)
 );
 
@@ -108,28 +113,19 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.InstructorRemun(
 CREATE TABLE IF NOT EXISTS PECI_PROJ.PlanIncludes(
 	progID			INT,
 	exeID			INT,
-    numSets			INT,
-    numReps			INT,
-    durationTime	TIME,
+    numSets			INT				DEFAULT 1,
+    numReps			INT				DEFAULT 1,
+    durationTime	TIME			DEFAULT '00:00:30',
     includedDate	DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(progID, exeID)
 );
 
-CREATE TABLE IF NOT EXISTS PECI_PROJ.PrivateExercise(
-	instID			INT,
-	exeID			INT,
-    forClientID		INT,
-    createdDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(instID, exeID)
-);
-
-CREATE TABLE IF NOT EXISTS PECI_PROJ.PrivateProgram(
-	instID			INT,
-	progID			INT,
-    forClientID		INT,
-    createdDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    showcaseProg	BIT				NOT NULL DEFAULT 0, -- 1 -> for showcase, 0 -> not showcase
-    PRIMARY KEY(instID, progID)
+CREATE TABLE IF NOT EXISTS PECI_PROJ.ClientPrograms(
+	forClientID		INT				NOT NULL,
+    instID 			INT				NOT NULL,
+    progID 			INT				NOT NULL,	
+    associateDate	DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(forClientID, instID, progID)
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.WorkoutLog(
@@ -186,6 +182,14 @@ ALTER TABLE PECI_PROJ.SysClient
 ADD CONSTRAINT FK_sysClient_userID
 FOREIGN KEY (clientID) REFERENCES PECI_PROJ.SysUser(userID) ON DELETE CASCADE;
 
+ALTER TABLE PECI_PROJ.Exercise
+ADD CONSTRAINT FK_Exercise_instructorID
+FOREIGN KEY (creatorIntsID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
+
+ALTER TABLE PECI_PROJ.Program
+ADD CONSTRAINT FK_Program_instructorID
+FOREIGN KEY (creatorIntsID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
+
 ALTER TABLE PECI_PROJ.ClientPayment
 ADD CONSTRAINT FK_clientPayment_clientID
 FOREIGN KEY (paidClientID) REFERENCES PECI_PROJ.SysClient(clientID) ON DELETE CASCADE;
@@ -202,20 +206,16 @@ ALTER TABLE PECI_PROJ.PlanIncludes
 ADD CONSTRAINT FK_planIncludes_exerciseID
 FOREIGN KEY (exeID) REFERENCES PECI_PROJ.Exercise(exerciseID) ON DELETE CASCADE;
 
-ALTER TABLE PECI_PROJ.PrivateExercise
-ADD CONSTRAINT FK_privateExercise_instructorID
-FOREIGN KEY (instID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
+ALTER TABLE PECI_PROJ.ClientPrograms
+ADD CONSTRAINT FK_clientPrograms_clientID
+FOREIGN KEY (forClientID) REFERENCES PECI_PROJ.SysUser(userID) ON DELETE CASCADE;
 
-ALTER TABLE PECI_PROJ.PrivateExercise
-ADD CONSTRAINT FK_privateExercise_exerciseID
-FOREIGN KEY (exeID) REFERENCES PECI_PROJ.Exercise(exerciseID) ON DELETE CASCADE;
+ALTER TABLE PECI_PROJ.ClientPrograms
+ADD CONSTRAINT FK_clientPrograms_instructorID
+FOREIGN KEY (instID) REFERENCES PECI_PROJ.SysUser(userID) ON DELETE CASCADE;
 
-ALTER TABLE PECI_PROJ.PrivateProgram
-ADD CONSTRAINT FK_privateProgram_instructorID
-FOREIGN KEY (instID) REFERENCES PECI_PROJ.SysInstructor(instructorID) ON DELETE CASCADE;
-
-ALTER TABLE PECI_PROJ.PrivateProgram
-ADD CONSTRAINT FK_privateProgram_programID
+ALTER TABLE PECI_PROJ.ClientPrograms
+ADD CONSTRAINT FK_clientPrograms_programID
 FOREIGN KEY (progID) REFERENCES PECI_PROJ.Program(programID) ON DELETE CASCADE;
 
 ALTER TABLE PECI_PROJ.WorkoutLog
