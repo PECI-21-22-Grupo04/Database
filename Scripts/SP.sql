@@ -20,12 +20,13 @@ BEGIN
 	FROM (SELECT 	CONVERT(AES_DECRYPT(email, dbKey) USING utf8) AS mail,
 					CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS firstName,
 					CONVERT(AES_DECRYPT(lastName, dbKey) USING utf8) AS lastName,
-					birthdate AS birthDate,
+					DATE(birthDate) AS birthDate,
 					sex AS sex,
 					CONVERT(AES_DECRYPT(street, dbKey) USING utf8) AS street,
 					CONVERT(AES_DECRYPT(postCode, dbKey) USING utf8) AS postCode,
 					CONVERT(AES_DECRYPT(city, dbKey) USING utf8) AS city,
 					CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
+                    DATE(registerDate) AS registerDate,
 					pathologies AS pathologies
 			FROM PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysClient.clientID) AS t1 WHERE t1.mail = INclientEmail;
 END $$
@@ -239,6 +240,31 @@ END $$
 DELIMITER ;
 
 
+DELIMITER $$ 
+CREATE PROCEDURE spSelectAvailableInstructors(IN dbKey NVARCHAR(255))
+BEGIN
+	SELECT 	CONVERT(AES_DECRYPT(email, dbKey) USING utf8) AS mail,
+			CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS firstName,
+			CONVERT(AES_DECRYPT(lastName, dbKey) USING utf8) AS lastName,
+			DATE(birthDate) AS birthDate,
+			sex AS sex,
+			CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
+			DATE(registerDate) AS registerDate,
+			maxClients,
+			currentClients,
+			averageRating
+	FROM 	(SELECT * 
+			FROM 	PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.instructorID) AS res1
+	LEFT JOIN (SELECT 	affInstID, COUNT(*) AS currentClients
+				FROM 	PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID
+				WHERE 	canceledDate IS NULL) AS res2 ON res2.affInstID = res1.userID
+	LEFT JOIN (SELECT 	revInstID,
+						AVG(rating) AS averageRating
+				FROM	PECI_PROJ.ReviewLog
+				GROUP BY revInstID) AS res3 ON res3.revInstID = res1.userID
+	WHERE	(currentClients IS NULL OR currentClients <= maxClients);
+END $$
+DELIMITER ;
 
 -- -- -- -- -- -- -- -- -- 
 -- SPs FOR WEB COMPONENT 
@@ -434,11 +460,13 @@ CALL spFinalizeClientPayment('client@mail.com', 'monthly', 49.99, 'chave');
 CALL spFinalizeClientPayment('client@mail.com', 'yearly ', 199.99, 'chave');
 CALL spSelectClientPaymentHistory('client@mail.com', 'chave');
 
+CALL spSelectAvailableInstructors('chave');
+
 CALL spAssociateInstructor('client@mail.com', 'instructor@mail.com', 'chave');
 CALL spAssociateInstructor('client@mail.com', 'instructorNumber2@mail.com', 'chave');
 CALL spSelectClientInstructorHistory('client@mail.com', 'chave');
 
-CALL spClientReviewInstructor('client@mail.com', 'instructor@mail.com', 5, null, 'chave');
+CALL spClientReviewInstructor('client@mail.com', 'instructor@mail.com', 3, null, 'chave');
 CALL spClientReviewInstructor('client@mail.com', 'instructorNumber2@mail.com', 5, 'Very good, has the best plans!', 'chave');
 
 CALL spAddClientRewards('client@mail.com', 1, 'chave');
