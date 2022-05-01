@@ -26,7 +26,7 @@ BEGIN
 					CONVERT(AES_DECRYPT(postCode, dbKey) USING utf8) AS postCode,
 					CONVERT(AES_DECRYPT(city, dbKey) USING utf8) AS city,
 					CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
-                    DATE(registerDate) AS registerDate,
+                    CAST(DATE(registerDate) AS CHAR) AS registerDate,
 					pathologies AS pathologies
 			FROM PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysClient.clientID) AS t1 WHERE t1.mail = INclientEmail;
 END $$
@@ -73,7 +73,7 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @uID FROM (SELECT userID, CONVERT(AES_DECRYPT(email, dbKey) USING utf8) AS mail FROM PECI_PROJ.SysUser) AS t1 WHERE t1.mail = INclientEmail;
-		SELECT height, weight, BMI, fitness, pathologies, measureDate 
+		SELECT height, weight, BMI, fitness, pathologies, CAST(DATE(measureDate) AS CHAR)
 			FROM ((PECI_PROJ.ProgressLog INNER JOIN PECI_PROJ.PhysicalData ON PECI_PROJ.ProgressLog.physicDataID = PECI_PROJ.PhysicalData.PhysicalDataID)
 				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.ClientID = PECI_PROJ.ProgressLog.progClientID)
 				ORDER BY physicDataID DESC
@@ -154,7 +154,11 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail;
-		SELECT * FROM PECI_PROJ.ClientPayment WHERE paymentID <> 0 AND paidClientID = @uID;
+		SELECT 	paymentID,
+				modality,
+                amount,
+                CAST(DATE(paymentDate) AS CHAR) AS paymentDate
+        FROM PECI_PROJ.ClientPayment WHERE paymentID <> 0 AND paidClientID = @uID;
     END IF;    
 END $$
 DELIMITER ;
@@ -169,7 +173,7 @@ BEGIN
 		SELECT 	mail,
 				firstName,
 				lastName,
-				signedDate,
+				CAST(signedDate AS CHAR),
 				canceledDate,
 				rating,
 				review
@@ -212,7 +216,7 @@ BEGIN
 		SELECT 	rewardName,
 				rDescription,
 				thumbnailPath, 
-				DATE(receivedDate) AS receivedDate
+				CAST(DATE(receivedDate) AS CHAR) AS receivedDate
 		FROM (PECI_PROJ.Reward INNER JOIN PECI_PROJ.RewardLog ON PECI_PROJ.Reward.rewardID = PECI_PROJ.RewardLog.rewID)
 		WHERE PECI_PROJ.RewardLog.rewClientID = @uID;
 	END IF;    
@@ -249,7 +253,7 @@ BEGIN
 			DATE(birthDate) AS birthDate,
 			sex AS sex,
 			CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
-			DATE(registerDate) AS registerDate,
+			CAST(DATE(registerDate) AS CHAR) AS registerDate,
 			maxClients,
 			currentClients,
 			averageRating
