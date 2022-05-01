@@ -386,6 +386,20 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
+CREATE PROCEDURE spSelectInstructorExerciseFromID (IN INinstructorEmail NVARCHAR(255),IN INeid INT ,IN dbkey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+		SELECT 	exerciseID, eName,difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
+		FROM 	PECI_PROJ.Exercise
+		WHERE 	creatorIntsID = @iID AND exerciseID = INeid;
+	END IF;     
+END $$
+DELIMITER ;
+
+DELIMITER $$
 CREATE PROCEDURE spSelectInstructorPrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
 BEGIN
 	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail) <> 1) THEN
