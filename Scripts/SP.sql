@@ -412,6 +412,19 @@ BEGIN
 	END IF;
 END $$
 DELIMITER ;
+DELIMITER $$
+CREATE PROCEDURE spSelectInstructorProgramFromID (IN INinstructorEmail NVARCHAR(255), IN pid INT,IN dbkey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
+		SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, createDate
+		FROM PECI_PROJ.Program
+		WHERE creatorIntsID = @iID AND programID = pid;
+	END IF;
+END $$
+DELIMITER ;
 
 DELIMITER $$
 CREATE PROCEDURE spSelectInstructorShowcasePrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
