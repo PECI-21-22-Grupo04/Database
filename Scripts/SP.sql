@@ -261,7 +261,8 @@ BEGIN
 			FROM 	PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.instructorID) AS res1
 	LEFT JOIN (SELECT 	affInstID, COUNT(*) AS currentClients
 				FROM 	PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID
-				WHERE 	canceledDate IS NULL) AS res2 ON res2.affInstID = res1.userID
+				WHERE 	canceledDate IS NULL
+                GROUP BY affInstID) AS res2 ON res2.affInstID = res1.userID
 	LEFT JOIN (SELECT 	revInstID,
 						AVG(rating) AS averageRating
 				FROM	PECI_PROJ.ReviewLog
