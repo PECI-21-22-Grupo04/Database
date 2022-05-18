@@ -402,7 +402,7 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
-		SELECT 	exerciseID, eName, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
+		SELECT 	exerciseID, eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
 		FROM 	PECI_PROJ.Exercise
 		WHERE 	creatorIntsID = @iID;
 	END IF;     
@@ -492,12 +492,15 @@ BEGIN
 END $$
 DELIMITER ;
 
-
 -- INSERIR DADOS NA BD --
 INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
 INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
-
+CALL spCreateInstructor('instructor@mail.com','João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
+CALL spCreateInstructor('instructorNumber2@mail.com','José','Frias', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 10, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
+CALL spFinalizeClientPayment('luiscouto10@gmail.com', 'monthly', 9.99, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
 
