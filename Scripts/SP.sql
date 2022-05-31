@@ -83,13 +83,13 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spFinalizeClientPayment(IN INclientEmail NVARCHAR(255), IN INmodality NVARCHAR(255), IN INamount NUMERIC(10,4), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spFinalizeClientPayment(IN INclientEmail NVARCHAR(255), IN INmodality NVARCHAR(255), IN INamount NUMERIC(10,4), IN INtransID NVARCHAR(64), IN dbKey NVARCHAR(255))
 BEGIN
     IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail;
-		INSERT INTO PECI_PROJ.ClientPayment (paidClientID, modality, amount) VALUES (@uID, INmodality, INamount);
+		INSERT INTO PECI_PROJ.ClientPayment (paidClientID, modality, amount, paypalTransID) VALUES (@uID, INmodality, INamount, INtransID);
     END IF;
 END $$
 DELIMITER ;
@@ -502,5 +502,3 @@ INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath,
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
 CALL spCreateInstructor('instructor@mail.com','João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
 CALL spCreateInstructor('instructorNumber2@mail.com','José','Frias', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 10, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
-CALL spFinalizeClientPayment('luiscouto10@gmail.com', 'monthly', 9.99, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
-

@@ -98,6 +98,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.ClientPayment(
 	paidClientID	INT,
     modality		NVARCHAR(255)	NOT NULL,
 	amount			NUMERIC(10,4)	NOT NULL,
+    paypalTransID	NVARCHAR(64)	NOT NULL, -- The Paypal transaction ID 
     paymentDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(paymentID, paidClientID)
 );
