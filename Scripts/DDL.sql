@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysInstructor(
     contactNumber	VARBINARY(255)	UNIQUE,
     paypalAccount	VARBINARY(255)	UNIQUE,
     maxClients		INT				NOT NULL DEFAULT 100,
+    aboutMe			NVARCHAR(255)	DEFAULT "",
     PRIMARY KEY(instructorID),
 	CHECK(maxClients > 0) 
 );

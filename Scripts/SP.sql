@@ -256,7 +256,8 @@ BEGIN
 			CAST(DATE(registerDate) AS CHAR) AS registerDate,
 			maxClients,
 			currentClients,
-			averageRating
+			averageRating,
+            aboutMe
 	FROM 	(SELECT * 
 			FROM 	PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.instructorID) AS res1
 	LEFT JOIN (SELECT 	affInstID, COUNT(*) AS currentClients
@@ -275,15 +276,23 @@ DELIMITER ;
 -- SPs FOR WEB COMPONENT 
 -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
-CREATE PROCEDURE spCreateInstructor (IN INinstructorEmail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateInstructor (IN INinstructorEmail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN INaboutMe NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
 		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country) VALUES (AES_ENCRYPT(INinstructorEmail, dbKey), AES_ENCRYPT(INfirstName, dbKey), AES_ENCRYPT(INlastName, dbKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, dbKey), AES_ENCRYPT(INpostCode, dbKey), AES_ENCRYPT(INcity, dbKey), AES_ENCRYPT(INcountry, dbKey));
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
-        IF(INmaxClients = 0) THEN
-			INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey));
+        IF(INmaxClients = 0 OR INmaxClients IS NULL) THEN
+			IF(INaboutMe = "" OR INaboutMe IS NULL) THEN
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey));
+			ELSE
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount, aboutMe) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INaboutMe);
+			END IF;
         ELSE
-			INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients); 
+			IF(INaboutMe = "" OR INaboutMe IS NULL) THEN
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount, maxClients) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients);
+			ELSE
+				INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients, INaboutMe); 
+			END IF;
 		END IF;
     COMMIT;
 END $$
@@ -304,7 +313,8 @@ BEGIN
 						CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
 						CONVERT(AES_DECRYPT(paypalAccount, dbKey) USING utf8) AS paypalAcc,
 						CONVERT(AES_DECRYPT(contactNumber, dbKey) USING utf8) AS contactNumber,
-						maxClients
+						maxClients,
+                        aboutMe
 						FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.InstructorID) AS t1 WHERE t1.mail = INinstructorEmail;
 END $$
 DELIMITER ;
@@ -500,5 +510,5 @@ INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, t
 INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
-CALL spCreateInstructor('instructor@mail.com','João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
-CALL spCreateInstructor('instructorNumber2@mail.com','José','Frias', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 10, 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
+CALL spCreateInstructor('instructor@mail.com','João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'Personal trainer com procura pela vida mais saudavel possivel','QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
+CALL spCreateInstructor('instructorNumber2@mail.com','José','Frias', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 10, 'Curso de Educação Fisica. Fã de Pilates mas também de musculação.', 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
