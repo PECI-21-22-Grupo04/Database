@@ -584,6 +584,19 @@ BEGIN
 END $$
 DELIMITER ;
 
+DELIMITER $$
+CREATE PROCEDURE spRemoveExerciseFromPlan (IN INprogID INT, INexeID INT)
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			DELETE FROM PECI_PROJ.planincludes WHERE programID <> 0 AND progID = INprogID AND exeID = INexeID;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
 -- -- -- -- -- -- -- -- -- 
 -- Shared SPs
 -- -- -- -- -- -- -- -- -- 
