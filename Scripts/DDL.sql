@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysUser(
     postCode		VARBINARY(255) 	NOT NULL,
     city			VARBINARY(255) 	NOT NULL,
     country			VARBINARY(255) 	NOT NULL,
+	imagePath 		NVARCHAR(255)	NOT NULL DEFAULT "",
     registerDate	DATETIME		DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(userID)
 );
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysAdmin(
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.SysInstructor(
 	instructorID	INT,
+    firebaseID		NVARCHAR(255)	NOT NULL UNIQUE,
     contactNumber	VARBINARY(255)	UNIQUE,
     paypalAccount	VARBINARY(255)	UNIQUE,
     maxClients		INT				NOT NULL DEFAULT 100,
@@ -48,8 +50,8 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Exercise(
     eDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
     forPathology	NVARCHAR(64)	NOT NULL DEFAULT "",
     targetMuscle	NVARCHAR(255)	NOT NULL DEFAULT "",
-    thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
-    videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
+    thumbnailPath	NVARCHAR(255)	NOT NULL DEFAULT "",
+    videoPath		NVARCHAR(255)	NOT NULL DEFAULT "",
     isPublic		BIT(1)			NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
     createDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
     creatorIntsID	INT,
@@ -61,8 +63,8 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.Program(
     pName			NVARCHAR(255)	NOT NULL,
     pDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
     forPathology	NVARCHAR(64)	NOT NULL DEFAULT "",
-    thumbnailPath	NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
-    videoPath		NVARCHAR(255)	NOT NULL NOT NULL DEFAULT "",
+    thumbnailPath	NVARCHAR(255)	NOT NULL DEFAULT "",
+    videoPath		NVARCHAR(255)	NOT NULL DEFAULT "",
     isPublic		BIT(1)			NOT NULL DEFAULT 0, -- 1 -> public, 0 -> not public
     createDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
     isShowcaseProg	BIT(1)			NOT NULL DEFAULT 0, -- 1 -> for showcase, 0 -> not for showcase

@@ -27,7 +27,8 @@ BEGIN
 					CONVERT(AES_DECRYPT(city, dbKey) USING utf8) AS city,
 					CONVERT(AES_DECRYPT(country, dbKey) USING utf8) AS country,
                     CAST(DATE(registerDate) AS CHAR) AS registerDate,
-					pathologies AS pathologies
+					pathologies AS pathologies,
+                    imagePath AS imagePath
 			FROM PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysClient.clientID) AS t1 WHERE t1.mail = INclientEmail;
 END $$
 DELIMITER ;
@@ -257,7 +258,8 @@ BEGIN
 			maxClients,
 			currentClients,
 			averageRating,
-            aboutMe
+            aboutMe,
+            imagePath
 	FROM 	(SELECT * 
 			FROM 	PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.instructorID) AS res1
 	LEFT JOIN (SELECT 	affInstID, COUNT(*) AS currentClients
@@ -314,7 +316,8 @@ BEGIN
 						CONVERT(AES_DECRYPT(paypalAccount, dbKey) USING utf8) AS paypalAcc,
 						CONVERT(AES_DECRYPT(contactNumber, dbKey) USING utf8) AS contactNumber,
 						maxClients,
-                        aboutMe
+                        aboutMe,
+                        imagePath
 						FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.InstructorID) AS t1 WHERE t1.mail = INinstructorEmail;
 END $$
 DELIMITER ;
@@ -333,7 +336,8 @@ BEGIN
 							CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS lastName,
 							birthdate,
 							sex,
-							DATE(signedDate) AS clientSince	
+							DATE(signedDate) AS clientSince,
+                            imagePath
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
 				WHERE canceledDate IS NULL AND affInstID = @iID) AS finalTbl;   
@@ -355,7 +359,8 @@ BEGIN
 							CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS lastName,
 							birthdate,
 							sex,
-							DATE(signedDate) AS clientSince	
+							DATE(signedDate) AS clientSince,
+                            imagePath
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
 				WHERE canceledDate IS NULL AND affInstID = @iID AND affClientID = INclientID ) AS finalTbl;   
@@ -501,6 +506,103 @@ BEGIN
     END IF;    
 END $$
 DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spDeleteExercise (IN INexerciseID INT, IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			DELETE FROM PECI_PROJ.exercise WHERE exerciseID <> 0 AND exerciseID = INexerciseID;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spDeleteProgram (IN INprogramID INT, IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			DELETE FROM PECI_PROJ.program WHERE programID <> 0 AND programID = INprogramID;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spUpdateExercise (IN INexerciseID INT, IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			UPDATE PECI_PROJ.exercise
+			SET eName = INname, difficulty = INdifficulty, eDescription = INdescription, forPathology = INforPathology, targetMuscle = INtargetMuscle, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
+			WHERE exerciseID = INexerciseID;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spUpdateProgramData (IN INprogramID INT, IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			IF(INshowcaseProg = 0) THEN
+				UPDATE PECI_PROJ.program
+				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
+				WHERE programID = INprogramID;
+			ELSE
+				UPDATE PECI_PROJ.program
+				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath, isShowcaseProg = INshowcaseProg
+				WHERE programID = INprogramID;
+			END IF;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spUpdateProgramExercise (IN INprogID INT, INexeID INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			UPDATE PECI_PROJ.planincludes
+			SET numSets = INnumSets, numReps = INnumReps, durationTime = INdurationTime
+			WHERE progID = INprogID AND exeID = INexeID;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
+-- -- -- -- -- -- -- -- -- 
+-- Shared SPs
+-- -- -- -- -- -- -- -- -- 
+
+DELIMITER $$
+CREATE PROCEDURE spUserAddImage (IN INemail INT, IN INpicturePath NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		START TRANSACTION;
+			UPDATE PECI_PROJ.SysUser 
+				SET picturePath = INpicturePath
+                WHERE email = INemail;
+		COMMIT;
+    END IF;
+END $$
+DELIMITER ;
+
 
 -- INSERIR DADOS NA BD --
 INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
