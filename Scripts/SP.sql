@@ -278,22 +278,22 @@ DELIMITER ;
 -- SPs FOR WEB COMPONENT 
 -- -- -- -- -- -- -- -- -- 
 DELIMITER $$
-CREATE PROCEDURE spCreateInstructor (IN INinstructorEmail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN INaboutMe NVARCHAR(255), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateInstructor (IN INinstructorEmail NVARCHAR(255), IN INfirebaseID NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN INaboutMe NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	START TRANSACTION;
 		INSERT INTO PECI_PROJ.SysUser (email, firstName, lastName, birthdate, sex, street, postCode, city, country) VALUES (AES_ENCRYPT(INinstructorEmail, dbKey), AES_ENCRYPT(INfirstName, dbKey), AES_ENCRYPT(INlastName, dbKey), INbirthdate, INsex, AES_ENCRYPT(INstreet, dbKey), AES_ENCRYPT(INpostCode, dbKey), AES_ENCRYPT(INcity, dbKey), AES_ENCRYPT(INcountry, dbKey));
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
         IF(INmaxClients = 0 OR INmaxClients IS NULL) THEN
 			IF(INaboutMe = "" OR INaboutMe IS NULL) THEN
-				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey));
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, firebaseID, contactNumber, paypalAccount) VALUES (@iID, AES_ENCRYPT(INfirebaseID, dbKey), AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey));
 			ELSE
-				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount, aboutMe) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INaboutMe);
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, firebaseID, contactNumber, paypalAccount, aboutMe) VALUES (@iID, AES_ENCRYPT(INfirebaseID, dbKey), AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INaboutMe);
 			END IF;
         ELSE
 			IF(INaboutMe = "" OR INaboutMe IS NULL) THEN
-				INSERT INTO PECI_PROJ.SysInstructor (instructorID, contactNumber, paypalAccount, maxClients) VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients);
+				INSERT INTO PECI_PROJ.SysInstructor (instructorID, firebaseID, contactNumber, paypalAccount, maxClients) VALUES (@iID, AES_ENCRYPT(INfirebaseID, dbKey), AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients);
 			ELSE
-				INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients, INaboutMe); 
+				INSERT INTO PECI_PROJ.SysInstructor VALUES (@iID, AES_ENCRYPT(INfirebaseID, dbKey) ,AES_ENCRYPT(INcontactNumber, dbKey), AES_ENCRYPT(INpaypalAccount, dbKey), INmaxClients, INaboutMe); 
 			END IF;
 		END IF;
     COMMIT;
@@ -305,6 +305,7 @@ CREATE PROCEDURE spSelectInstructor (IN INinstructorEmail NVARCHAR(255), IN dbKe
 BEGIN
     SELECT * 
 		FROM (SELECT 	CONVERT(AES_DECRYPT(email, dbKey) USING utf8) AS mail,
+						CONVERT(AES_DECRYPT(firebaseID, dbKey) USING utf8) AS fireBaseID,
 						CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS firstName,
 						CONVERT(AES_DECRYPT(lastName, dbKey) USING utf8) AS lastName,
 						birthdate AS birthDate,
@@ -591,7 +592,7 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.planincludes WHERE programID <> 0 AND progID = INprogID AND exeID = INexeID;
+			DELETE FROM PECI_PROJ.planincludes WHERE progID <> 0 AND progID = INprogID AND exeID = INexeID;
 		COMMIT;
     END IF;
 END $$
