@@ -603,15 +603,15 @@ DELIMITER ;
 -- -- -- -- -- -- -- -- -- 
 
 DELIMITER $$
-CREATE PROCEDURE spUserAddImage (IN INemail INT, IN INpicturePath NVARCHAR(255), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spUserAddImage (IN INemail  NVARCHAR(255), IN INimagePath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INclientEmail) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INemail) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
 			UPDATE PECI_PROJ.SysUser 
-				SET picturePath = INpicturePath
-                WHERE email = INemail;
+				SET imagePath = INimagePath
+                WHERE CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) = INemail;
 		COMMIT;
     END IF;
 END $$
