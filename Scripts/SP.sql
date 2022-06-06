@@ -357,7 +357,7 @@ BEGIN
 			FROM (SELECT 	userID AS clientID,
 							CONVERT(AES_DECRYPT(email, dbKey) USING utf8) AS mail,
 							CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS firstName,
-							CONVERT(AES_DECRYPT(firstName, dbKey) USING utf8) AS lastName,
+							CONVERT(AES_DECRYPT(lastName, dbKey) USING utf8) AS lastName,
 							birthdate,
 							sex,
 							DATE(signedDate) AS clientSince,
@@ -384,13 +384,13 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INfirebaseRef NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail) <> 1) THEN
-		INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
+		INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath) VALUES (INname, INfirebaseRef, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath);
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
-		INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, creatorIntsID) VALUES (INname, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath, @iID);
+		INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, creatorIntsID) VALUES (INname, INfirebaseRef, INdifficulty, INdescription, INforPathology, INtargetMuscle, INthumbnailPath, INvideoPath, @iID);
 	END IF;
 END $$
 DELIMITER ;
@@ -418,7 +418,7 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
-		SELECT 	exerciseID, eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
+		SELECT 	exerciseID, eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
 		FROM 	PECI_PROJ.Exercise
 		WHERE 	creatorIntsID = @iID;
 	END IF;     
@@ -432,7 +432,7 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING utf8) = INinstructorEmail;
-		SELECT 	exerciseID, eName,difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
+		SELECT 	exerciseID, firebaseRef, eName,difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate 
 		FROM 	PECI_PROJ.Exercise
 		WHERE 	creatorIntsID = @iID AND exerciseID = INeid;
 	END IF;     
@@ -481,16 +481,16 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spAddExerciseToProgram (IN INprogramID INT, INexerciseID INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
+CREATE PROCEDURE spAddExerciseToProgram (IN INprogramID INT, INexerciseID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
 BEGIN
-	INSERT INTO PECI_PROJ.PlanIncludes (progID, exeID, numSets, numReps, durationTime) VALUES (INprogramID, INexerciseID, INnumSets, INnumReps, INdurationTime);
+	INSERT INTO PECI_PROJ.PlanIncludes (progID, exeID, exerciseOrder, numSets, numReps, durationTime) VALUES (INprogramID, INexerciseID, INexerciseOrder, INnumSets, INnumReps, INdurationTime);
 END $$
 DELIMITER ;
 
 DELIMITER $$
 CREATE PROCEDURE spSelectProgramExercises (IN INprogramID INT)
 BEGIN
-	SELECT 	exerciseID, eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate, numSets, numReps, durationTime 
+	SELECT 	exerciseID, eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate, numSets, numReps, durationTime 
     FROM 	PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PlanIncludes ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PlanIncludes.exeID 
     WHERE	progID = INprogramID;
 END $$
@@ -511,11 +511,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spDeleteExercise (IN INexerciseID INT, IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.Exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.Exercise WHERE exerciseID <> 0 AND exerciseID = INexerciseID;
+			DELETE FROM PECI_PROJ.exercise WHERE exerciseID <> 0 AND exerciseID = INexerciseID;
 		COMMIT;
     END IF;
 END $$
@@ -524,25 +524,25 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spDeleteProgram (IN INprogramID INT, IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.Program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.Program WHERE programID <> 0 AND programID = INprogramID;
+			DELETE FROM PECI_PROJ.program WHERE programID <> 0 AND programID = INprogramID;
 		COMMIT;
     END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spUpdateExercise (IN INexerciseID INT, IN INname NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spUpdateExercise (IN INexerciseID INT, IN INname NVARCHAR(255), IN INfirebaseRef NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.Exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			UPDATE PECI_PROJ.Exercise
-			SET eName = INname, difficulty = INdifficulty, eDescription = INdescription, forPathology = INforPathology, targetMuscle = INtargetMuscle, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
+			UPDATE PECI_PROJ.exercise
+			SET eName = INname, firebaseRef = INfirebaseRef, difficulty = INdifficulty, eDescription = INdescription, forPathology = INforPathology, targetMuscle = INtargetMuscle, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
 			WHERE exerciseID = INexerciseID;
 		COMMIT;
     END IF;
@@ -552,16 +552,16 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spUpdateProgramData (IN INprogramID INT, IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.Program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
 			IF(INshowcaseProg = 0) THEN
-				UPDATE PECI_PROJ.Program
+				UPDATE PECI_PROJ.program
 				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
 				WHERE programID = INprogramID;
 			ELSE
-				UPDATE PECI_PROJ.Program
+				UPDATE PECI_PROJ.program
 				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath, isShowcaseProg = INshowcaseProg
 				WHERE programID = INprogramID;
 			END IF;
@@ -571,14 +571,14 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spUpdateProgramExercise (IN INprogID INT, INexeID INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
+CREATE PROCEDURE spUpdateProgramExercise (IN INprogID INT, INexeID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.PlanIncludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			UPDATE PECI_PROJ.PlanIncludes
-			SET numSets = INnumSets, numReps = INnumReps, durationTime = INdurationTime
+			UPDATE PECI_PROJ.planincludes
+			SET exerciseOrder = INexerciseOrder, numSets = INnumSets, numReps = INnumReps, durationTime = INdurationTime
 			WHERE progID = INprogID AND exeID = INexeID;
 		COMMIT;
     END IF;
@@ -588,11 +588,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spRemoveExerciseFromPlan (IN INprogID INT, INexeID INT)
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.PlanIncludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.PlanIncludes WHERE progID <> 0 AND progID = INprogID AND exeID = INexeID;
+			DELETE FROM PECI_PROJ.planincludes WHERE progID <> 0 AND progID = INprogID AND exeID = INexeID;
 		COMMIT;
     END IF;
 END $$
@@ -620,10 +620,10 @@ DELIMITER ;
 
 -- INSERIR DADOS NA BD --
 INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', 'firebaseRef1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', 'firebaseRef2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', 'firebaseRef3', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', 'firebaseRef4', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
 CALL spCreateInstructor('instructor@mail.com','João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'Personal trainer com procura pela vida mais saudavel possivel','QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');

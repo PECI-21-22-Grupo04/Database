@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysClient(
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.Exercise(
 	exerciseID		INT				AUTO_INCREMENT,
+	firebaseRef 	NVARCHAR(255)	NOT NULL,
     eName			NVARCHAR(255)	NOT NULL,
     difficulty		NVARCHAR(32)	NOT NULL,
     eDescription	NVARCHAR(1024)	NOT NULL DEFAULT "",
@@ -117,6 +118,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.InstructorRemun(
 CREATE TABLE IF NOT EXISTS PECI_PROJ.PlanIncludes(
 	progID			INT,
 	exeID			INT,
+    exerciseOrder 	INT,
     numSets			INT				DEFAULT 1,
     numReps			INT				DEFAULT 1,
     durationTime	TIME			DEFAULT '00:00:30',
