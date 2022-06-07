@@ -511,11 +511,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spDeleteExercise (IN INexerciseID INT, IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.Exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.exercise WHERE exerciseID <> 0 AND exerciseID = INexerciseID;
+			DELETE FROM PECI_PROJ.Exercise WHERE exerciseID <> 0 AND exerciseID = INexerciseID;
 		COMMIT;
     END IF;
 END $$
@@ -524,11 +524,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spDeleteProgram (IN INprogramID INT, IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.Program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.program WHERE programID <> 0 AND programID = INprogramID;
+			DELETE FROM PECI_PROJ.Program WHERE programID <> 0 AND programID = INprogramID;
 		COMMIT;
     END IF;
 END $$
@@ -537,11 +537,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spUpdateExercise (IN INexerciseID INT, IN INname NVARCHAR(255), IN INfirebaseRef NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT exerciseID, eName FROM PECI_PROJ.Exercise) AS t1 WHERE t1.exerciseID = INexerciseID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			UPDATE PECI_PROJ.exercise
+			UPDATE PECI_PROJ.Exercise
 			SET eName = INname, firebaseRef = INfirebaseRef, difficulty = INdifficulty, eDescription = INdescription, forPathology = INforPathology, targetMuscle = INtargetMuscle, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
 			WHERE exerciseID = INexerciseID;
 		COMMIT;
@@ -552,16 +552,16 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spUpdateProgramData (IN INprogramID INT, IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT programID, pName FROM PECI_PROJ.Program) AS t1 WHERE t1.programID = INprogramID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
 			IF(INshowcaseProg = 0) THEN
-				UPDATE PECI_PROJ.program
+				UPDATE PECI_PROJ.Program
 				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath
 				WHERE programID = INprogramID;
 			ELSE
-				UPDATE PECI_PROJ.program
+				UPDATE PECI_PROJ.Program
 				SET pName = INname, pDescription = INdescription, forPathology = INforPathology, thumbnailPath = INthumbnailPath, videoPath = INvideoPath, isShowcaseProg = INshowcaseProg
 				WHERE programID = INprogramID;
 			END IF;
@@ -573,11 +573,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spUpdateProgramExercise (IN INprogID INT, INexeID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.PlanIncludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			UPDATE PECI_PROJ.planincludes
+			UPDATE PECI_PROJ.PlanIncludes
 			SET exerciseOrder = INexerciseOrder, numSets = INnumSets, numReps = INnumReps, durationTime = INdurationTime
 			WHERE progID = INprogID AND exeID = INexeID;
 		COMMIT;
@@ -588,11 +588,11 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spRemoveExerciseFromPlan (IN INprogID INT, INexeID INT)
 BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.planincludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
+	IF ((SELECT COUNT(*) FROM (SELECT progID, exeID FROM PECI_PROJ.PlanIncludes) AS t1 WHERE t1.progID = INprogID AND t1.exeID = INexeID) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		START TRANSACTION;
-			DELETE FROM PECI_PROJ.planincludes WHERE progID <> 0 AND progID = INprogID AND exeID = INexeID;
+			DELETE FROM PECI_PROJ.PlanIncludes WHERE progID <> 0 AND progID = INprogID AND exeID = INexeID;
 		COMMIT;
     END IF;
 END $$
