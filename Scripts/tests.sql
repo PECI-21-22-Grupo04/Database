@@ -8,14 +8,17 @@ CALL spAddClientInfo('client@mail.com', 185, 85, 'intermediate', 20, 'pathologie
 CALL spAddClientInfo('client@mail.com', 190, 90, 'advanced', 20, 'pathologies', 'chave');
 CALL spSelectClientInfo('client@mail.com','chave');
 
-CALL spFinalizeClientPayment('client@mail.com', 'monthly', 49.99, 'chave');
-CALL spFinalizeClientPayment('client@mail.com', 'yearly ', 199.99, 'chave');
+CALL spFinalizeClientPayment('client@mail.com', 'monthly', 49.99, 'transactionID', 'chave');
+CALL spFinalizeClientPayment('client@mail.com', 'yearly ', 199.99, 'transactionID2','chave');
 CALL spSelectClientPaymentHistory('client@mail.com', 'chave');
+CALL spSelectLatestClientPayment('client@mail.com', 'chave');
 
 CALL spSelectAvailableInstructors('chave');
 
 CALL spAssociateInstructor('client@mail.com', 'instructor@mail.com', 'chave');
 CALL spAssociateInstructor('client@mail.com', 'instructorNumber2@mail.com', 'chave');
+CALL spIsClientAssociated('client@mail.com', 'chave');
+CALL spSelectAssociatedInstructor('client@mail.com', 'chave');
 CALL spSelectClientInstructorHistory('client@mail.com', 'chave');
 
 CALL spClientReviewInstructor('client@mail.com', 'instructor@mail.com', 3, null, 'chave');
@@ -30,8 +33,8 @@ CALL spDeleteClient('client@mail.com','chave');
 
 
 -- TESTES WEB APP --
-CALL spCreateInstructor('instructor@mail.com','teste','1234', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'chave');
-CALL spCreateInstructor('instructorNumber2@mail.com','teste','1234', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 123, 'chave');
+CALL spCreateInstructor('instructor@mail.com','firebaseID', 'fname', 'lname', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 10, 'aboutme', 'chave');
+CALL spCreateInstructor('instructorNumber2@mail.com', 'firebaseID23','teste','1234', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 123, 'aboutme','chave');
 CALL spSelectInstructor('instructor@mail.com','chave');
 
 CALL spSelectInstructorClients('instructorNumber2@mail.com', 'chave');

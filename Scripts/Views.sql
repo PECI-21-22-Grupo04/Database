@@ -10,4 +10,3 @@ SELECT 	programID, pName, forPathology, pDescription, thumbnailPath, videoPath, 
 FROM	PECI_PROJ.Program
 WHERE	isPublic = 1;
 
-
