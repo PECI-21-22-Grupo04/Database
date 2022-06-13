@@ -140,9 +140,9 @@ BEGIN
 		SELECT userID INTO @iID FROM (SELECT userID, CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail FROM PECI_PROJ.SysUser) AS t1 WHERE t1.mail = INinstructorEmail;
 		
 		IF(INreview IS NULL OR INreview = "") THEN
-			INSERT INTO PECI_PROJ.ReviewLog(revClientID, revInstID, rating) VALUES (@cID, @iID, INrating);
+			INSERT INTO PECI_PROJ.ReviewLog(revClientID, revInstID, rating) VALUES (@cID, @iID, INrating) ON DUPLICATE KEY UPDATE revClientID = @cID, revInstID = @iID, rating = INrating;
 		ELSE
-			INSERT INTO PECI_PROJ.ReviewLog(revClientID, revInstID, rating, review) VALUES (@cID, @iID, INrating, INreview);
+			INSERT INTO PECI_PROJ.ReviewLog(revClientID, revInstID, rating, review) VALUES (@cID, @iID, INrating, INreview) ON DUPLICATE KEY UPDATE revClientID = @cID, revInstID = @iID, rating = INrating, review = Inreview;
 		END IF;
     END IF;
 END $$
