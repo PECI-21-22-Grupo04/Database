@@ -1,4 +1,5 @@
 USE PECI_PROJ;
+
 -- -- -- -- -- -- -- -- -- -- 
 -- SPs FOR MOBILE COMPONENT -
 -- -- -- -- -- -- -- -- -- -- 
@@ -175,7 +176,7 @@ BEGIN
 				modality,
                 amount,
                 CAST(DATE(paymentDate) AS CHAR) AS paymentDate
-        FROM PECI_PROJ.ClientPayment WHERE paymentID <> 0 AND paidClientID = @uID AND paymentID=(SELECT max(paymentID) FROM PECI_PROJ.ClientPayment);
+        FROM PECI_PROJ.ClientPayment WHERE paymentID <> 0 AND paidClientID = @uID AND paymentID=(SELECT max(paymentID) FROM PECI_PROJ.ClientPayment WHERE paidClientID=@uID);
     END IF;    
 END $$
 DELIMITER ;
@@ -355,13 +356,14 @@ BEGIN
                 forPathology,
                 thumbnailPath,
                 videoPath,
+                isPublic,
+                isShowcaseProg,
                 creatorIntsID
         FROM PECI_PROJ.Program INNER JOIN PECI_PROJ.ClientPrograms ON PECI_PROJ.Program.ProgramID = PECI_PROJ.ClientPrograms.progID
 		WHERE PECI_PROJ.ClientPrograms.forClientID = @uID;
 	END IF;    
 END $$
 DELIMITER ;
-
 
 DELIMITER $$ 
 CREATE PROCEDURE spSelectAvailableInstructors(IN dbKey NVARCHAR(255))
@@ -393,10 +395,19 @@ BEGIN
 END $$
 DELIMITER ;
 
+DELIMITER $$
+CREATE PROCEDURE spSelectAllProgramExercises()
+BEGIN
+	SELECT 	progID AS programID, exerciseID, eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, DATE(includedDate) AS includedDate, numSets, exerciseOrder, numReps, durationTime, creatorIntsID AS creatorID 
+    FROM 	PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PlanIncludes ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PlanIncludes.exeID 
+    ORDER BY progID ASC;
+END $$
+DELIMITER ;
 
--- -- -- -- -- -- -- -- -- 
--- SPs FOR WEB COMPONENT 
--- -- -- -- -- -- -- -- -- 
+
+-- -- -- -- -- -- -- -- --- 
+-- SPs FOR WEB COMPONENT --
+-- -- -- -- -- -- -- -- --- 
 DELIMITER $$
 CREATE PROCEDURE spCreateInstructor (IN INinstructorEmail NVARCHAR(255), IN INfirebaseID NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN INcontactNumber NVARCHAR(255), IN INpaypalAccount NVARCHAR(255), IN INmaxClients INT, IN INaboutMe NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
@@ -490,20 +501,6 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectDefaultExercises()
-BEGIN
-     SELECT * FROM PECI_PROJ.freePublicExercises;
-END $$
-DELIMITER ;
-
-DELIMITER $$
-CREATE PROCEDURE spSelectDefaultPrograms()
-BEGIN
-     SELECT * FROM PECI_PROJ.freePublicPrograms;
-END $$
-DELIMITER ;
-
-DELIMITER $$
 CREATE PROCEDURE spCreateExercise (IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INfirebaseRef NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INinstructorEmail) <> 1) THEN
@@ -587,20 +584,6 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectInstructorShowcasePrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
-BEGIN
-	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INinstructorEmail) <> 1) THEN
-		CALL spRaiseError();
-    ELSE
-		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INinstructorEmail;
-		SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, createDate
-		FROM PECI_PROJ.Program 
-		WHERE (creatorIntsID = @iID AND isShowcaseProg = 1);
-	END IF;
-END $$
-DELIMITER ;
-
-DELIMITER $$
 CREATE PROCEDURE spAddExerciseToProgram (IN INprogramID INT, INexerciseID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
 BEGIN
 	INSERT INTO PECI_PROJ.PlanIncludes (progID, exeID, exerciseOrder, numSets, numReps, durationTime) VALUES (INprogramID, INexerciseID, INexerciseOrder, INnumSets, INnumReps, INdurationTime);
@@ -610,9 +593,10 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE spSelectProgramExercises (IN INprogramID INT)
 BEGIN
-	SELECT 	exerciseID, eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, createDate, numSets, numReps, durationTime 
+	SELECT 	progID AS programID, exerciseID, eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, DATE(includedDate) AS includedDate, numSets, exerciseOrder, numReps, durationTime, creatorIntsID AS creatorID 
     FROM 	PECI_PROJ.Exercise INNER JOIN PECI_PROJ.PlanIncludes ON PECI_PROJ.Exercise.exerciseID = PECI_PROJ.PlanIncludes.exeID 
-    WHERE	progID = INprogramID;
+    WHERE	progID = INprogramID
+    ORDER BY exerciseOrder ASC;
 END $$
 DELIMITER ;
 
@@ -718,9 +702,42 @@ BEGIN
 END $$
 DELIMITER ;
 
--- -- -- -- -- -- -- -- -- 
--- Shared SPs
--- -- -- -- -- -- -- -- -- 
+DELIMITER $$
+CREATE PROCEDURE spRemovePlanFromClient (IN INprogID INT, IN INclientID INT)
+BEGIN
+	DELETE FROM	PECI_PROJ.ClientPrograms WHERE forClientID = INclientID AND progID = INprogID;
+END $$
+DELIMITER ;
+-- -- -- -- -- --
+-- SHARED SPs ---
+-- -- -- -- -- --
+DELIMITER $$
+CREATE PROCEDURE spSelectDefaultExercises()
+BEGIN
+     SELECT * FROM PECI_PROJ.freePublicExercises;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spSelectDefaultPrograms()
+BEGIN
+     SELECT * FROM PECI_PROJ.freePublicPrograms;
+END $$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE spSelectInstructorShowcasePrograms (IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INinstructorEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INinstructorEmail;
+		SELECT programID, pName, pDescription, forPathology, thumbnailPath, videoPath, isShowcaseProg, createDate
+		FROM PECI_PROJ.Program 
+		WHERE (creatorIntsID = @iID AND isShowcaseProg = 1);
+	END IF;
+END $$
+DELIMITER ;
 
 DELIMITER $$
 CREATE PROCEDURE spUserAddImage (IN INemail  NVARCHAR(255), IN INimagePath NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -740,10 +757,10 @@ DELIMITER ;
 
 -- INSERIR DADOS NA BD --
 INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', 'firebaseRef1', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', 'firebaseRef2', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', 'firebaseRef3', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', 'firebaseRef4', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', '', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', '', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', '', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
+INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', '', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
 CALL spCreateInstructor('instructor@mail.com','firebaseID1', 'João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'Personal trainer com procura pela vida mais saudavel possivel','QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
