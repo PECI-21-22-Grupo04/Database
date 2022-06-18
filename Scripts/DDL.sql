@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysUser(
     city			VARBINARY(255) 	NOT NULL,
     country			VARBINARY(255) 	NOT NULL,
 	imagePath 		NVARCHAR(255)	NOT NULL DEFAULT "",
+
     registerDate	DATETIME		DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(userID)
 );
@@ -40,6 +41,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysInstructor(
 CREATE TABLE IF NOT EXISTS PECI_PROJ.SysClient(
 	clientID		INT,
     pathologies		NVARCHAR(1024)  NOT NULL DEFAULT "", 
+    firebaseID		VARBINARY(255)	NOT NULL UNIQUE DEFAULT "",
     PRIMARY KEY(clientID)
 );
 
@@ -134,13 +136,14 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.ClientPrograms(
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.WorkoutLog(
+	logID			INT				AUTO_INCREMENT,
 	doneByClientID	INT,
 	progID			INT,
     timeTaken		TIME,
-    heartRate		INT,
-	caloriesBurnt	INT,
+    heartRate		INT				DEFAULT 120,		
+	caloriesBurnt	INT				DEFAULT 30,
     doneDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY(doneByClientID, progID)
+    PRIMARY KEY(logID, doneByClientID, progID)
 );
 
 CREATE TABLE IF NOT EXISTS PECI_PROJ.ProgressLog(

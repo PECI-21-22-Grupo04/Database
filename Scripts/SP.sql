@@ -15,6 +15,20 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
+CREATE PROCEDURE spUpdateFirebaseID (IN INclientEmail NVARCHAR(255), IN INfirebaseID NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @cID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;
+		UPDATE 	PECI_PROJ.SysClient
+        SET		firebaseID = AES_ENCRYPT(INfirebaseID, dbKey)
+        WHERE	clientID=@cID; 
+    END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
 CREATE PROCEDURE spSelectClient (IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
     SELECT * 
@@ -29,7 +43,8 @@ BEGIN
 					CONVERT(AES_DECRYPT(country, dbKey) USING UTF8MB4) AS country,
                     CAST(DATE(registerDate) AS CHAR) AS registerDate,
 					pathologies AS pathologies,
-                    imagePath AS imagePath
+                    imagePath AS imagePath,
+                    CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
 			FROM PECI_PROJ.SysUser INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysClient.clientID) AS t1 WHERE t1.mail = INclientEmail;
 END $$
 DELIMITER ;
@@ -194,14 +209,16 @@ BEGIN
 				CAST(signedDate AS CHAR) AS signedDate,
 				canceledDate,
 				rating,
-				review
+				review,
+                imagePath
 		FROM (SELECT 	CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail,
 						CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS firstName,
-						CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS lastName,
+						CONVERT(AES_DECRYPT(lastName, dbKey) USING UTF8MB4) AS lastName,
 						DATE(signedDate) AS signedDate,
 						DATE(canceledDate) AS canceledDate,
 						affClientID,
-						affInstID
+						affInstID,
+                        imagePath
 				FROM PECI_PROJ.SysUser 
 				INNER JOIN (SELECT *
 							FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID
@@ -404,6 +421,66 @@ BEGIN
 END $$
 DELIMITER ;
 
+DELIMITER $$
+CREATE PROCEDURE spFinishWorkout(IN INclientEmail NVARCHAR(255), IN INprogramID INT, INtimeTaken TIME, IN INheartRate INT, INcaloriesBurnt INT, IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;	
+		INSERT INTO PECI_PROJ.WorkoutLog (doneByClientID, progID, timeTaken, heartRate, caloriesBurnt) VALUES (@uID, INprogramID, INtimeTaken, INheartRate, INcaloriesBurnt);
+	END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$ 
+CREATE PROCEDURE spRemoveInstructorAssociation (IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;	
+		SELECT 	affiliationID INTO @affID FROM
+		(SELECT affiliationID 
+			FROM (SELECT 	*
+				FROM PECI_PROJ.SysUser 
+				INNER JOIN (SELECT *
+							FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID
+							WHERE affClientID = @uID) AS res ON PECI_PROJ.SysUser.userID = res.affInstID) AS res2 
+				LEFT JOIN PECI_PROJ.ReviewLog ON (PECI_PROJ.ReviewLog.revClientID = res2.affClientID AND PECI_PROJ.ReviewLog.revInstID = res2.affInstID)
+                WHERE canceledDate IS NULL
+				ORDER BY canceledDate ASC
+                LIMIT 1 ) AS res4;
+		UPDATE 	PECI_PROJ.affiliation
+        SET		canceledDate = CURRENT_TIMESTAMP
+        WHERE	affiliationID = @affID;
+	END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$ 
+CREATE PROCEDURE spSelectClientWorkoutHistory (IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
+		CALL spRaiseError();
+    ELSE
+		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;	
+		SELECT 	logID, 
+				progID, 
+                pName,
+                timeTaken, 
+                heartRate, 
+                caloriesBurnt, 
+                doneDate
+		FROM PECI_PROJ.workoutlog
+		INNER JOIN  PECI_PROJ.Program
+		ON  PECI_PROJ.Program.programID = PECI_PROJ.workoutlog.progID
+        WHERE doneByClientID=@uID
+        ORDER BY logID DESC;
+	END IF;    
+END $$
+DELIMITER ;
+
 
 -- -- -- -- -- -- -- -- --- 
 -- SPs FOR WEB COMPONENT --
@@ -449,7 +526,8 @@ BEGIN
 						CONVERT(AES_DECRYPT(contactNumber, dbKey) USING UTF8MB4) AS contactNumber,
 						maxClients,
                         aboutMe,
-                        imagePath
+                        imagePath,
+                        CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
 						FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.InstructorID) AS t1 WHERE t1.mail = INinstructorEmail;
 END $$
 DELIMITER ;
@@ -469,7 +547,8 @@ BEGIN
 							birthdate,
 							sex,
 							DATE(signedDate) AS clientSince,
-                            imagePath
+                            imagePath,
+                            CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
 				WHERE canceledDate IS NULL AND affInstID = @iID) AS finalTbl;   
@@ -492,7 +571,8 @@ BEGIN
 							birthdate,
 							sex,
 							DATE(signedDate) AS clientSince,
-                            imagePath
+                            imagePath,
+                            CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
 				WHERE canceledDate IS NULL AND affInstID = @iID AND affClientID = INclientID ) AS finalTbl;   
@@ -708,6 +788,8 @@ BEGIN
 	DELETE FROM	PECI_PROJ.ClientPrograms WHERE forClientID = INclientID AND progID = INprogID;
 END $$
 DELIMITER ;
+
+
 -- -- -- -- -- --
 -- SHARED SPs ---
 -- -- -- -- -- --
@@ -756,7 +838,6 @@ DELIMITER ;
 
 
 -- INSERIR DADOS NA BD --
-INSERT INTO PECI_PROJ.Reward (rewardName, rDescription, thumbnailPath) VALUES ('Reward 1', 'Registration Completed!', 'path');
 INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', '', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', '', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
 INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', '', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
