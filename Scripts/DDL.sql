@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.SysUser(
     city			VARBINARY(255) 	NOT NULL,
     country			VARBINARY(255) 	NOT NULL,
 	imagePath 		NVARCHAR(255)	NOT NULL DEFAULT "",
-
     registerDate	DATETIME		DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(userID)
 );
@@ -105,7 +104,7 @@ CREATE TABLE IF NOT EXISTS PECI_PROJ.ClientPayment(
     modality		NVARCHAR(255)	NOT NULL,
 	amount			NUMERIC(10,4)	NOT NULL,
     paypalTransID	NVARCHAR(64)	NOT NULL, -- The Paypal transaction ID 
-    paymentDate		DATETIME		NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    paymentDate		DATE			NOT NULL,
     PRIMARY KEY(paymentID, paidClientID)
 );
 

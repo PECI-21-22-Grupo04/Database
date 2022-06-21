@@ -15,6 +15,27 @@ END $$
 DELIMITER ;
 
 DELIMITER $$
+CREATE PROCEDURE spUpdateClient (IN INclientEmail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN dbKey NVARCHAR(255))
+BEGIN
+	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
+			CALL spRaiseError();
+	ELSE
+		SELECT userID INTO @cID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;
+		UPDATE 	PECI_PROJ.SysUser
+        SET 	firstName 	= AES_ENCRYPT(INfirstName, dbKey),
+				lastName	= AES_ENCRYPT(INlastName, dbKey),
+				birthdate 	= INbirthdate,
+				sex			= INsex,
+				street		= AES_ENCRYPT(INstreet, dbKey),
+				postCode	= AES_ENCRYPT(INpostCode, dbKey),
+				city		= AES_ENCRYPT(INcity, dbKey),
+				country		= AES_ENCRYPT(INcountry, dbKey)
+        WHERE	userID=@cID; 
+	END IF;
+END $$
+DELIMITER ;
+
+DELIMITER $$
 CREATE PROCEDURE spUpdateFirebaseID (IN INclientEmail NVARCHAR(255), IN INfirebaseID NVARCHAR(255), IN dbKey NVARCHAR(255))
 BEGIN
 	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
@@ -90,23 +111,22 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @uID FROM (SELECT userID, CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail FROM PECI_PROJ.SysUser) AS t1 WHERE t1.mail = INclientEmail;
-		SELECT height, weight, BMI, fitness, pathologies, CAST(DATE(measureDate) AS CHAR)
+		SELECT physicalDataID, height, weight, BMI, fitness, pathologies, CAST(DATE(measureDate) AS CHAR) AS measuredDate
 			FROM ((PECI_PROJ.ProgressLog INNER JOIN PECI_PROJ.PhysicalData ON PECI_PROJ.ProgressLog.physicDataID = PECI_PROJ.PhysicalData.PhysicalDataID)
 				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.ClientID = PECI_PROJ.ProgressLog.progClientID)
-				ORDER BY physicDataID DESC
-				LIMIT 1;
+				ORDER BY physicDataID DESC;
 	END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spFinalizeClientPayment(IN INclientEmail NVARCHAR(255), IN INmodality NVARCHAR(255), IN INamount NUMERIC(10,4), IN INtransID NVARCHAR(64), IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spFinalizeClientPayment(IN INclientEmail NVARCHAR(255), IN INmodality NVARCHAR(255), IN INamount NUMERIC(10,4), IN INtransID NVARCHAR(64), IN INdate DATE, IN dbKey NVARCHAR(255))
 BEGIN
     IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @uID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INclientEmail;
-		INSERT INTO PECI_PROJ.ClientPayment (paidClientID, modality, amount, paypalTransID) VALUES (@uID, INmodality, INamount, INtransID);
+		INSERT INTO PECI_PROJ.ClientPayment (paidClientID, modality, amount, paypalTransID, paymentDate) VALUES (@uID, INmodality, INamount, INtransID, INdate);
     END IF;
 END $$
 DELIMITER ;
@@ -472,9 +492,9 @@ BEGIN
                 heartRate, 
                 caloriesBurnt, 
                 doneDate
-		FROM PECI_PROJ.workoutlog
+		FROM PECI_PROJ.WorkoutLog
 		INNER JOIN  PECI_PROJ.Program
-		ON  PECI_PROJ.Program.programID = PECI_PROJ.workoutlog.progID
+		ON  PECI_PROJ.Program.programID = PECI_PROJ.WorkoutLog.progID
         WHERE doneByClientID=@uID
         ORDER BY logID DESC;
 	END IF;    
@@ -526,8 +546,7 @@ BEGIN
 						CONVERT(AES_DECRYPT(contactNumber, dbKey) USING UTF8MB4) AS contactNumber,
 						maxClients,
                         aboutMe,
-                        imagePath,
-                        CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
+                        imagePath
 						FROM PECI_PROJ.SysUser JOIN PECI_PROJ.SysInstructor ON PECI_PROJ.SysUser.userID = PECI_PROJ.SysInstructor.InstructorID) AS t1 WHERE t1.mail = INinstructorEmail;
 END $$
 DELIMITER ;
@@ -539,43 +558,45 @@ BEGIN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INInstructorEmail;
-		SELECT * 
-			FROM (SELECT 	userID AS clientID,
-							CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail,
-							CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS firstName,
-							CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS lastName,
-							birthdate,
-							sex,
-							DATE(signedDate) AS clientSince,
-                            imagePath,
-                            CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
+		SELECT 	userID AS clientID,
+				CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail,
+				CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS firstName,
+				CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS lastName,
+				birthdate,
+				sex,
+				DATE(signedDate) AS clientSince,
+				imagePath,
+				CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
+			FROM (SELECT 	*
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
-				WHERE canceledDate IS NULL AND affInstID = @iID) AS finalTbl;   
+				WHERE canceledDate IS NULL AND affInstID = @iID) AS finalTbl
+                INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.clientID = finalTbl.userID;   
 	END IF;
 END $$
 DELIMITER ;
 
 DELIMITER $$
-CREATE PROCEDURE spSelectInstructorClientsFromID (IN INInstructorEmail NVARCHAR(255),IN INclientID INT, IN dbKey NVARCHAR(255))
+CREATE PROCEDURE spSelectInstructorClientsFromID (IN INInstructorEmail NVARCHAR(255), IN INclientID INT, IN dbKey NVARCHAR(255))
 BEGIN
 	IF ((SELECT COUNT(*) FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INInstructorEmail) <> 1) THEN
 		CALL spRaiseError();
     ELSE
 		SELECT userID INTO @iID FROM (SELECT userID, email FROM PECI_PROJ.SysUser) AS t1 WHERE CONVERT(AES_DECRYPT(t1.email, dbKey) USING UTF8MB4) = INInstructorEmail;
-		SELECT * 
-			FROM (SELECT 	userID AS clientID,
-							CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail,
-							CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS firstName,
-							CONVERT(AES_DECRYPT(lastName, dbKey) USING UTF8MB4) AS lastName,
-							birthdate,
-							sex,
-							DATE(signedDate) AS clientSince,
-                            imagePath,
-                            CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID
+		SELECT 	userID AS clientID,
+				CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail,
+				CONVERT(AES_DECRYPT(firstName, dbKey) USING UTF8MB4) AS firstName,
+				CONVERT(AES_DECRYPT(lastName, dbKey) USING UTF8MB4) AS lastName,
+				birthdate,
+				sex,
+				DATE(signedDate) AS clientSince,
+				imagePath,
+				CONVERT(AES_DECRYPT(firebaseID, dbKey) USING UTF8MB4) AS firebaseID 
+			FROM (SELECT *
 			FROM ((SELECT * FROM PECI_PROJ.Affiliation INNER JOIN PECI_PROJ.AffiliationLog ON PECI_PROJ.Affiliation.affiliationID = PECI_PROJ.AffiliationLog.affID) AS res
 				INNER JOIN PECI_PROJ.SysUser ON  PECI_PROJ.SysUser.userID = res.affClientID) 
-				WHERE canceledDate IS NULL AND affInstID = @iID AND affClientID = INclientID ) AS finalTbl;   
+				WHERE canceledDate IS NULL AND affInstID = @iID AND affClientID = INclientID ) AS finalTbl
+                INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.clientID = finalTbl.userID;  
 	END IF;
 END $$
 DELIMITER ;
@@ -835,14 +856,3 @@ BEGIN
     END IF;
 END $$
 DELIMITER ;
-
-
--- INSERIR DADOS NA BD --
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise1', '', 'Beginner', 'Do Pilates exercise 1', 'Pregnant', 'chest' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise2', '', 'Advanced', 'Do Yoga exercise 1', 'Back Surgery', 'legs' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise3', '', 'Intermediate', 'Do Pilates exercise 2', 'Neck Problems', 'neck' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Exercise (eName, firebaseRef, difficulty, eDescription, forPathology, targetMuscle, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultExercise4', '', 'Intermediate', 'Do Yoga exercise 3', 'Ankle Problems', 'fett' ,'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram1', 'Do Pilates program 1', 'Pregnant', 'thumbnailpath/here', 'videopath/here', 1, null);
-INSERT INTO PECI_PROJ.Program (pName, pDescription, forPathology, thumbnailPath, videoPath, isPublic, creatorIntsID) VALUES ('defaultPogram2', 'Do Yoga program 1', '', 'thumbnailpath/here', 'videopath/here', 1, null);
-CALL spCreateInstructor('instructor@mail.com','firebaseID1', 'João','Dias', '1999-01-01', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber', 'paypalAccount', 0, 'Personal trainer com procura pela vida mais saudavel possivel','QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
-CALL spCreateInstructor('instructorNumber2@mail.com','firebaseID2','José','Frias', '2005-02-23', 'M', 'rua', '3000-500', 'cidade', 'pais', 'contactNumber123', 'paypalAccount123', 10, 'Curso de Educação Fisica. Fã de Pilates mas também de musculação.', 'QWeWoaUbxKeQDapkD8B1oQDIbOtXK60T8BIBaIMyTKI=');
