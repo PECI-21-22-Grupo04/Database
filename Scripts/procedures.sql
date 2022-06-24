@@ -113,7 +113,8 @@ BEGIN
 		SELECT userID INTO @uID FROM (SELECT userID, CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail FROM PECI_PROJ.SysUser) AS t1 WHERE t1.mail = INclientEmail;
 		SELECT physicalDataID, height, weight, BMI, fitness, pathologies, CAST(DATE(measureDate) AS CHAR) AS measuredDate
 			FROM ((PECI_PROJ.ProgressLog INNER JOIN PECI_PROJ.PhysicalData ON PECI_PROJ.ProgressLog.physicDataID = PECI_PROJ.PhysicalData.PhysicalDataID)
-				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.ClientID = PECI_PROJ.ProgressLog.progClientID)
+				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.clientID = PECI_PROJ.ProgressLog.progClientID)
+				WHERE clientID=@uID
 				ORDER BY physicDataID DESC;
 	END IF;
 END $$

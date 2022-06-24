@@ -10,6 +10,7 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema PECI_PROJ
 -- -----------------------------------------------------
+DROP SCHEMA IF EXISTS `PECI_PROJ` ;
 
 -- -----------------------------------------------------
 -- Schema PECI_PROJ
@@ -20,6 +21,8 @@ USE `PECI_PROJ` ;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`Affiliation`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`Affiliation` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`Affiliation` (
   `affiliationID` INT NOT NULL AUTO_INCREMENT,
   `signedDate` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -34,6 +37,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`AffiliationLog`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`AffiliationLog` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`AffiliationLog` (
   `affID` INT NOT NULL,
   `affClientID` INT NOT NULL,
@@ -47,6 +52,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`SysUser`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`SysUser` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`SysUser` (
   `userID` INT NOT NULL AUTO_INCREMENT,
   `email` VARBINARY(255) NOT NULL,
@@ -63,7 +70,7 @@ CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`SysUser` (
   PRIMARY KEY (`userID`),
   UNIQUE INDEX `email` (`email` ASC) VISIBLE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 3
+AUTO_INCREMENT = 5
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -71,6 +78,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`SysClient`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`SysClient` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`SysClient` (
   `clientID` INT NOT NULL,
   `pathologies` VARCHAR(1024) CHARACTER SET 'utf8' NOT NULL DEFAULT '',
@@ -89,6 +98,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`ClientPayment`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`ClientPayment` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`ClientPayment` (
   `paymentID` INT NOT NULL AUTO_INCREMENT,
   `paidClientID` INT NOT NULL,
@@ -103,7 +114,7 @@ CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`ClientPayment` (
     REFERENCES `PECI_PROJ`.`SysClient` (`clientID`)
     ON DELETE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 2
+AUTO_INCREMENT = 3
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -111,6 +122,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`SysInstructor`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`SysInstructor` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`SysInstructor` (
   `instructorID` INT NOT NULL,
   `firebaseID` VARBINARY(255) NOT NULL,
@@ -134,6 +147,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`Program`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`Program` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`Program` (
   `programID` INT NOT NULL AUTO_INCREMENT,
   `pName` VARCHAR(255) CHARACTER SET 'utf8' NOT NULL,
@@ -161,6 +176,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`ClientPrograms`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`ClientPrograms` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`ClientPrograms` (
   `forClientID` INT NOT NULL,
   `progID` INT NOT NULL,
@@ -183,6 +200,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`Exercise`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`Exercise` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`Exercise` (
   `exerciseID` INT NOT NULL AUTO_INCREMENT,
   `firebaseRef` VARCHAR(255) CHARACTER SET 'utf8' NOT NULL DEFAULT '',
@@ -212,6 +231,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`InstructorRemun`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`InstructorRemun` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`InstructorRemun` (
   `renumID` INT NOT NULL AUTO_INCREMENT,
   `receivedInstID` INT NOT NULL,
@@ -231,6 +252,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`PhysicalData`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`PhysicalData` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`PhysicalData` (
   `physicalDataID` INT NOT NULL AUTO_INCREMENT,
   `height` INT NULL DEFAULT NULL,
@@ -239,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`PhysicalData` (
   `BMI` INT NULL DEFAULT NULL,
   PRIMARY KEY (`physicalDataID`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 3
+AUTO_INCREMENT = 4
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -247,6 +270,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`PlanIncludes`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`PlanIncludes` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`PlanIncludes` (
   `progID` INT NOT NULL,
   `exeID` INT NOT NULL,
@@ -273,6 +298,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`ProgressLog`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`ProgressLog` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`ProgressLog` (
   `progClientID` INT NOT NULL,
   `physicDataID` INT NOT NULL,
@@ -295,6 +322,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`ReviewLog`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`ReviewLog` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`ReviewLog` (
   `revClientID` INT NOT NULL,
   `revInstID` INT NOT NULL,
@@ -319,6 +348,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`Reward`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`Reward` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`Reward` (
   `rewardID` INT NOT NULL AUTO_INCREMENT,
   `rewardName` VARCHAR(1024) CHARACTER SET 'utf8' NOT NULL,
@@ -334,6 +365,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`RewardLog`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`RewardLog` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`RewardLog` (
   `rewID` INT NOT NULL,
   `rewClientID` INT NOT NULL,
@@ -356,6 +389,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`SysAdmin`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`SysAdmin` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`SysAdmin` (
   `adminID` INT NOT NULL,
   `permissionLvl` CHAR(1) NULL DEFAULT NULL,
@@ -372,6 +407,8 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 -- Table `PECI_PROJ`.`WorkoutLog`
 -- -----------------------------------------------------
+DROP TABLE IF EXISTS `PECI_PROJ`.`WorkoutLog` ;
+
 CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`WorkoutLog` (
   `logID` INT NOT NULL AUTO_INCREMENT,
   `doneByClientID` INT NOT NULL,
@@ -412,6 +449,9 @@ CREATE TABLE IF NOT EXISTS `PECI_PROJ`.`freePublicPrograms` (`programID` INT, `p
 -- procedure spAddClientInfo
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spAddClientInfo`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spAddClientInfo`(IN INclientEmail NVARCHAR(255), IN INheight INT, IN INweight INT, IN INfitness NVARCHAR(255), IN INbmi INT, IN INpathologies NVARCHAR(1024), IN dbKey NVARCHAR(255))
@@ -438,6 +478,9 @@ DELIMITER ;
 -- procedure spAddClientRewards
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spAddClientRewards`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spAddClientRewards`(IN INclientEmail NVARCHAR(255), IN INrewardID INT, IN dbKey NVARCHAR(255))
@@ -456,6 +499,9 @@ DELIMITER ;
 -- procedure spAddExerciseToProgram
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spAddExerciseToProgram`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spAddExerciseToProgram`(IN INprogramID INT, INexerciseID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
@@ -468,6 +514,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spAssociateInstructor
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spAssociateInstructor`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -510,6 +559,9 @@ DELIMITER ;
 -- procedure spAssociateProgramToClient
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spAssociateProgramToClient`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spAssociateProgramToClient`(IN INclientEmail NVARCHAR(255), IN INprogramID INT, IN dbkey NVARCHAR(255))
@@ -527,6 +579,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spClientReviewInstructor
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spClientReviewInstructor`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -552,6 +607,9 @@ DELIMITER ;
 -- procedure spCreateClient
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spCreateClient`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spCreateClient`(IN INclientEmail NVARCHAR(255), IN INfirstName NVARCHAR(255), IN INlastName NVARCHAR(255), IN INbirthdate DATE, IN INsex NVARCHAR(32), IN INstreet NVARCHAR(255), IN INpostCode NVARCHAR(255), IN INcity NVARCHAR(255), IN INcountry NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -568,6 +626,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spCreateExercise
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spCreateExercise`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -586,6 +647,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spCreateInstructor
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spCreateInstructor`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -616,6 +680,9 @@ DELIMITER ;
 -- procedure spCreateProgram
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spCreateProgram`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spCreateProgram`(IN INinstructorEmail NVARCHAR(255), IN INname NVARCHAR(255), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN INshowcaseProg BIT(1), dbKey NVARCHAR(255))
@@ -638,6 +705,9 @@ DELIMITER ;
 -- procedure spDeleteClient
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spDeleteClient`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spDeleteClient`(IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -658,6 +728,9 @@ DELIMITER ;
 -- procedure spDeleteExercise
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spDeleteExercise`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spDeleteExercise`(IN INexerciseID INT, IN dbKey NVARCHAR(255))
@@ -676,6 +749,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spDeleteProgram
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spDeleteProgram`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -696,6 +772,9 @@ DELIMITER ;
 -- procedure spFinalizeClientPayment
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spFinalizeClientPayment`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spFinalizeClientPayment`(IN INclientEmail NVARCHAR(255), IN INmodality NVARCHAR(255), IN INamount NUMERIC(10,4), IN INtransID NVARCHAR(64), IN INdate DATE, IN dbKey NVARCHAR(255))
@@ -714,6 +793,9 @@ DELIMITER ;
 -- procedure spFinishWorkout
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spFinishWorkout`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spFinishWorkout`(IN INclientEmail NVARCHAR(255), IN INprogramID INT, INtimeTaken TIME, IN INheartRate INT, INcaloriesBurnt INT, IN dbKey NVARCHAR(255))
@@ -731,6 +813,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spIsClientAssociated
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spIsClientAssociated`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -771,6 +856,9 @@ DELIMITER ;
 -- procedure spRemoveExerciseFromPlan
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spRemoveExerciseFromPlan`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spRemoveExerciseFromPlan`(IN INprogID INT, INexeID INT)
@@ -789,6 +877,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spRemoveInstructorAssociation
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spRemoveInstructorAssociation`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -821,6 +912,9 @@ DELIMITER ;
 -- procedure spRemovePlanFromClient
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spRemovePlanFromClient`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spRemovePlanFromClient`(IN INprogID INT, IN INclientID INT)
@@ -833,6 +927,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectAllProgramExercises
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectAllProgramExercises`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -848,6 +945,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectAssociatedInstructor
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectAssociatedInstructor`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -924,6 +1024,9 @@ DELIMITER ;
 -- procedure spSelectAvailableInstructors
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectAvailableInstructors`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectAvailableInstructors`(IN dbKey NVARCHAR(255))
@@ -960,6 +1063,9 @@ DELIMITER ;
 -- procedure spSelectClient
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClient`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectClient`(IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -987,6 +1093,9 @@ DELIMITER ;
 -- procedure spSelectClientInfo
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientInfo`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectClientInfo`(IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -997,7 +1106,8 @@ BEGIN
 		SELECT userID INTO @uID FROM (SELECT userID, CONVERT(AES_DECRYPT(email, dbKey) USING UTF8MB4) AS mail FROM PECI_PROJ.SysUser) AS t1 WHERE t1.mail = INclientEmail;
 		SELECT physicalDataID, height, weight, BMI, fitness, pathologies, CAST(DATE(measureDate) AS CHAR) AS measuredDate
 			FROM ((PECI_PROJ.ProgressLog INNER JOIN PECI_PROJ.PhysicalData ON PECI_PROJ.ProgressLog.physicDataID = PECI_PROJ.PhysicalData.PhysicalDataID)
-				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.ClientID = PECI_PROJ.ProgressLog.progClientID)
+				INNER JOIN PECI_PROJ.SysClient ON PECI_PROJ.SysClient.clientID = PECI_PROJ.ProgressLog.progClientID)
+				WHERE clientID=@uID
 				ORDER BY physicDataID DESC;
 	END IF;
 END$$
@@ -1007,6 +1117,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectClientInstructorHistory
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientInstructorHistory`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1047,6 +1160,9 @@ DELIMITER ;
 -- procedure spSelectClientPaymentHistory
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientPaymentHistory`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectClientPaymentHistory`(IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -1068,6 +1184,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectClientPrograms
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientPrograms`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1097,6 +1216,9 @@ DELIMITER ;
 -- procedure spSelectClientRewards
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientRewards`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectClientRewards`(IN INclientEmail NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -1119,6 +1241,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectClientWorkoutHistory
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectClientWorkoutHistory`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1149,6 +1274,9 @@ DELIMITER ;
 -- procedure spSelectDefaultExercises
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectDefaultExercises`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectDefaultExercises`()
@@ -1162,6 +1290,9 @@ DELIMITER ;
 -- procedure spSelectDefaultPrograms
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectDefaultPrograms`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectDefaultPrograms`()
@@ -1174,6 +1305,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectInstructor
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructor`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1203,6 +1337,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectInstructorClients
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorClients`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1235,6 +1372,9 @@ DELIMITER ;
 -- procedure spSelectInstructorClientsFromID
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorClientsFromID`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectInstructorClientsFromID`(IN INInstructorEmail NVARCHAR(255), IN INclientID INT, IN dbKey NVARCHAR(255))
@@ -1266,6 +1406,9 @@ DELIMITER ;
 -- procedure spSelectInstructorExerciseFromID
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorExerciseFromID`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectInstructorExerciseFromID`(IN INinstructorEmail NVARCHAR(255),IN INeid INT ,IN dbkey NVARCHAR(255))
@@ -1285,6 +1428,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectInstructorExercises
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorExercises`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1306,6 +1452,9 @@ DELIMITER ;
 -- procedure spSelectInstructorProgramFromID
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorProgramFromID`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectInstructorProgramFromID`(IN INinstructorEmail NVARCHAR(255), IN pid INT,IN dbkey NVARCHAR(255))
@@ -1325,6 +1474,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectInstructorPrograms
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorPrograms`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1346,6 +1498,9 @@ DELIMITER ;
 -- procedure spSelectInstructorShowcasePrograms
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectInstructorShowcasePrograms`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectInstructorShowcasePrograms`(IN INinstructorEmail NVARCHAR(255), IN dbkey NVARCHAR(255))
@@ -1365,6 +1520,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spSelectLatestClientPayment
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectLatestClientPayment`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1388,6 +1546,9 @@ DELIMITER ;
 -- procedure spSelectProgramExercises
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spSelectProgramExercises`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spSelectProgramExercises`(IN INprogramID INT)
@@ -1403,6 +1564,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spUpdateClient
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUpdateClient`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1431,6 +1595,9 @@ DELIMITER ;
 -- procedure spUpdateExercise
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUpdateExercise`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spUpdateExercise`(IN INexerciseID INT, IN INname NVARCHAR(255), IN INfirebaseRef NVARCHAR(255), IN INdifficulty NVARCHAR(32), IN INdescription NVARCHAR(1024), IN INforPathology NVARCHAR(64), IN INtargetMuscle NVARCHAR(255), IN INthumbnailPath NVARCHAR(255), IN INvideoPath NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -1452,6 +1619,9 @@ DELIMITER ;
 -- procedure spUpdateFirebaseID
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUpdateFirebaseID`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spUpdateFirebaseID`(IN INclientEmail NVARCHAR(255), IN INfirebaseID NVARCHAR(255), IN dbKey NVARCHAR(255))
@@ -1471,6 +1641,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spUpdateProgramData
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUpdateProgramData`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1499,6 +1672,9 @@ DELIMITER ;
 -- procedure spUpdateProgramExercise
 -- -----------------------------------------------------
 
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUpdateProgramExercise`;
+
 DELIMITER $$
 USE `PECI_PROJ`$$
 CREATE DEFINER=`root`@`%` PROCEDURE `spUpdateProgramExercise`(IN INprogID INT, INexeID INT, IN INexerciseOrder INT, IN INnumSets INT, IN INnumReps INT, IN INdurationTime NVARCHAR(64))
@@ -1519,6 +1695,9 @@ DELIMITER ;
 -- -----------------------------------------------------
 -- procedure spUserAddImage
 -- -----------------------------------------------------
+
+USE `PECI_PROJ`;
+DROP procedure IF EXISTS `PECI_PROJ`.`spUserAddImage`;
 
 DELIMITER $$
 USE `PECI_PROJ`$$
@@ -1541,6 +1720,7 @@ DELIMITER ;
 -- View `PECI_PROJ`.`freePublicExercises`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `PECI_PROJ`.`freePublicExercises`;
+DROP VIEW IF EXISTS `PECI_PROJ`.`freePublicExercises` ;
 USE `PECI_PROJ`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `PECI_PROJ`.`freePublicExercises` AS select `PECI_PROJ`.`Exercise`.`exerciseID` AS `exerciseID`,`PECI_PROJ`.`Exercise`.`firebaseRef` AS `firebaseRef`,`PECI_PROJ`.`Exercise`.`eName` AS `eName`,`PECI_PROJ`.`Exercise`.`difficulty` AS `difficulty`,`PECI_PROJ`.`Exercise`.`eDescription` AS `eDescription`,`PECI_PROJ`.`Exercise`.`forPathology` AS `forPathology`,`PECI_PROJ`.`Exercise`.`targetMuscle` AS `targetMuscle`,`PECI_PROJ`.`Exercise`.`thumbnailPath` AS `thumbnailPath`,`PECI_PROJ`.`Exercise`.`videoPath` AS `videoPath`,`PECI_PROJ`.`Exercise`.`isPublic` AS `isPublic`,`PECI_PROJ`.`Exercise`.`createDate` AS `createDate`,`PECI_PROJ`.`Exercise`.`creatorIntsID` AS `creatorIntsID` from `PECI_PROJ`.`Exercise` where (`PECI_PROJ`.`Exercise`.`isPublic` = 1);
 
@@ -1548,10 +1728,10 @@ CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER V
 -- View `PECI_PROJ`.`freePublicPrograms`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `PECI_PROJ`.`freePublicPrograms`;
+DROP VIEW IF EXISTS `PECI_PROJ`.`freePublicPrograms` ;
 USE `PECI_PROJ`;
 CREATE  OR REPLACE ALGORITHM=UNDEFINED DEFINER=`root`@`%` SQL SECURITY DEFINER VIEW `PECI_PROJ`.`freePublicPrograms` AS select `PECI_PROJ`.`Program`.`programID` AS `programID`,`PECI_PROJ`.`Program`.`pName` AS `pName`,`PECI_PROJ`.`Program`.`pDescription` AS `pDescription`,`PECI_PROJ`.`Program`.`forPathology` AS `forPathology`,`PECI_PROJ`.`Program`.`thumbnailPath` AS `thumbnailPath`,`PECI_PROJ`.`Program`.`videoPath` AS `videoPath`,`PECI_PROJ`.`Program`.`isPublic` AS `isPublic`,`PECI_PROJ`.`Program`.`createDate` AS `createDate`,`PECI_PROJ`.`Program`.`isShowcaseProg` AS `isShowcaseProg`,`PECI_PROJ`.`Program`.`creatorIntsID` AS `creatorIntsID` from `PECI_PROJ`.`Program` where (`PECI_PROJ`.`Program`.`isPublic` = 1);
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
-
