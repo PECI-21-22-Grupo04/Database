@@ -1,2 +1,2 @@
 ### Database
-Contains the scripts to create the database necessary for the mobile application
+Contains the necessary scripts to create the MySQL database used by both applications
